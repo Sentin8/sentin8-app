@@ -14,7 +14,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
-use utoipa;
 use uuid::Uuid;
 
 use crate::auth;
@@ -2934,7 +2933,11 @@ async fn fetch_merged_branding(
 
 /// Call Sys's domain mapping API to derive app + BFF domains.
 /// Idempotent: Sys upserts, safe to call multiple times.
-#[allow(dead_code, clippy::similar_names, clippy::duplicate_underscore_argument)]
+#[allow(
+    dead_code,
+    clippy::similar_names,
+    clippy::duplicate_underscore_argument
+)]
 async fn _derive_sentin8_tls_mappings(
     state: &AppState,
     org_id: Uuid,

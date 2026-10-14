@@ -28,12 +28,9 @@ impl AuthProvisioner {
     pub async fn connect() -> anyhow::Result<Self> {
         let issuer = sentin8::config::Sentin8Config::from_env().sentin8_auth_issuer();
         let ca_cert_path = sentin8::auth::m2m::platform_ca_path();
-        let cert = sentin8::auth::m2m::ensure_workload_certificate(
-            &issuer,
-            "sentin8:app",
-            &ca_cert_path,
-        )
-        .await?;
+        let cert =
+            sentin8::auth::m2m::ensure_workload_certificate(&issuer, "sentin8:app", &ca_cert_path)
+                .await?;
         let mtls = sentin8::middleware::mtls::MtlsConfig::new(
             &cert.ca_cert_path,
             &cert.cert_path,

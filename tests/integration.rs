@@ -147,9 +147,8 @@ fn runtime_context_response_shape() {
 /// policies under test are actually enforced (the `sentin8` superuser
 /// bypasses every policy and would make these tests vacuous).
 async fn db_pool() -> Option<sqlx::PgPool> {
-    let url = std::env::var("SENTIN8_APP_DB_DSN").unwrap_or_else(|_| {
-        "postgres://sentin8_app_service@localhost:5432/sentin8".to_string()
-    });
+    let url = std::env::var("SENTIN8_APP_DB_DSN")
+        .unwrap_or_else(|_| "postgres://sentin8_app_service@localhost:5432/sentin8".to_string());
     match sqlx::postgres::PgPool::connect(&url).await {
         Ok(p) => Some(p),
         Err(e) => {
@@ -304,9 +303,8 @@ async fn db_app_instances_lookup_respects_policy() {
     // Org/env lifecycle is Sentin8:Sys's domain — the fixture connects as
     // sentin8_sys_service for the setup writes (App's role is read-only on
     // orgs/envs), then reuses the app-service pool for the assertions.
-    let sys_url = std::env::var("SENTIN8_SYS_DB_DSN").unwrap_or_else(|_| {
-        "postgres://sentin8_sys_service@localhost:5432/sentin8".to_string()
-    });
+    let sys_url = std::env::var("SENTIN8_SYS_DB_DSN")
+        .unwrap_or_else(|_| "postgres://sentin8_sys_service@localhost:5432/sentin8".to_string());
     let sys_pool = match sqlx::postgres::PgPool::connect(&sys_url).await {
         Ok(p) => p,
         Err(e) => {
@@ -589,9 +587,8 @@ async fn db_instances_hostname_columns_roundtrip() {
     let hostname = format!("ebank.{}.{}.test", env_a.simple(), org_id.simple());
     let bff = format!("bff.{hostname}");
     // Org/env fixture via the Sys service role.
-    let sys_url = std::env::var("SENTIN8_SYS_DB_DSN").unwrap_or_else(|_| {
-        "postgres://sentin8_sys_service@localhost:5432/sentin8".to_string()
-    });
+    let sys_url = std::env::var("SENTIN8_SYS_DB_DSN")
+        .unwrap_or_else(|_| "postgres://sentin8_sys_service@localhost:5432/sentin8".to_string());
     let sys_pool = match sqlx::postgres::PgPool::connect(&sys_url).await {
         Ok(p) => p,
         Err(e) => {

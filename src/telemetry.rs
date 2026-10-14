@@ -30,13 +30,10 @@ pub async fn build_stat_token(
     sentin8_auth_issuer: &str,
 ) -> Result<crate::stat_event_listener::StatIngest, String> {
     let ca_cert_path = sentin8::auth::m2m::platform_ca_path();
-    let cert = sentin8::auth::m2m::ensure_workload_certificate(
-        sentin8_auth_issuer,
-        "app",
-        &ca_cert_path,
-    )
-    .await
-    .map_err(|e| format!("app stat identity: {e}"))?;
+    let cert =
+        sentin8::auth::m2m::ensure_workload_certificate(sentin8_auth_issuer, "app", &ca_cert_path)
+            .await
+            .map_err(|e| format!("app stat identity: {e}"))?;
     let mtls = sentin8::middleware::mtls::MtlsConfig::new(
         &cert.ca_cert_path,
         &cert.cert_path,
@@ -70,7 +67,8 @@ pub async fn stat_admin_transport(
         &cert.cert_path,
         &cert.key_path,
     );
-    sentin8::middleware::mtls::build_mtls_client(&mtls).map_err(|e| format!("app stat transport: {e}"))
+    sentin8::middleware::mtls::build_mtls_client(&mtls)
+        .map_err(|e| format!("app stat transport: {e}"))
 }
 
 /// Build the Stat client for App telemetry : the `app`
@@ -81,13 +79,10 @@ pub async fn build_stat_client(
     sentin8_auth_issuer: &str,
 ) -> Result<StatClient, String> {
     let ca_cert_path = sentin8::auth::m2m::platform_ca_path();
-    let cert = sentin8::auth::m2m::ensure_workload_certificate(
-        sentin8_auth_issuer,
-        "app",
-        &ca_cert_path,
-    )
-    .await
-    .map_err(|e| format!("app stat identity: {e}"))?;
+    let cert =
+        sentin8::auth::m2m::ensure_workload_certificate(sentin8_auth_issuer, "app", &ca_cert_path)
+            .await
+            .map_err(|e| format!("app stat identity: {e}"))?;
     StatClient::with_workload_identity(
         config.sentin8_stat_url.clone(),
         config.sentin8_stat_property_id,
