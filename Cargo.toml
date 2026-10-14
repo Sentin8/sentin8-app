@@ -1,0 +1,98 @@
+# sentin8-app — one repo, one cargo workspace: the service binary + its
+# SDK mini-facade (SDD 3.1). The facade re-exports the client/contracts
+# crates; consumers pin this repo git tag {svc}-sdk-vX.Y.Z.
+
+[workspace]
+resolver = "2"
+members = [".", "sdk/crates/app-contracts", "sdk/facade"]
+
+# SPDX-FileCopyrightText: Copyright Logically Magic Inc. <hello@logicallymagic.com>
+# SPDX-FileCopyrightText: Copyright Hamid Jahanzad <Hamid@Jahanzad.com>
+# SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "sentin8-app"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Sentin8/sentin8-app"
+rust-version = "1.85"
+description = "Sentin8 Sentin8:App — third-party app store, instance management."
+
+[[bin]]
+name = "sentin8-app"
+path = "src/main.rs"
+
+[lib]
+name = "sentin8_app_server"
+path = "src/lib.rs"
+
+[dependencies]
+# THE SDK pin (RS 2.3) - the only cross-repo dependency. It carries the
+# entire shared library workspace (core/identity/tls/bus/shield/shell +
+# every app-client/contracts SDK crate) behind the `sentin8` facade.
+sentin8 = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.3" }
+sentin8-app-sdk = { path = "sdk/facade" }
+# Service SDK mini-facades (SDD 3.1) — per-owner git pins
+sentin8-stat-sdk.workspace = true
+sentin8-secrets-sdk.workspace = true
+
+
+axum = { version = "0.8", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.7", features = ["trace", "cors", "compression-gzip", "limit"] }
+hyper = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls-native-roots-no-provider", "stream"], default-features = false }
+rustls = { version = "0.23", features = ["std", "tls12", "logging"], default-features = false }
+rustls-graviola = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls-ring", "postgres", "uuid", "chrono", "json", "macros"] }
+dotenvy = "0.15"
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1"
+anyhow = "1"
+utoipa = { version = "5", features = ["chrono", "uuid"] }
+sha2 = "0.10"
+base64 = "0.22"
+rand = "0.8"
+futures-util = "0.3"
+
+[workspace.package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.85"
+repository = "https://github.com/Sentin8/sentin8-app"
+
+[workspace.dependencies]
+# Versions mirror the SDK workspace (sentin8-sdk/Cargo.toml) — kept in
+# sync by the owner repo's bumps.
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls-native-roots-no-provider"], default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tracing = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+utoipa = { version = "5", features = ["chrono", "uuid"] }
+async-trait = "0.1"
+
+# Shared-plane leaf crates resolve through the SDK git pin — a git-pinned
+# workspace exports every member crate under the same source (SDD §3.1;
+# the facade re-export alone is not enough for moved crates that link
+# leaf crates directly).
+sdk_git = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.3" }
+sentin8 = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.3" }
+sentin8-middleware = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.3" }
+sentin8-m2m = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.3" }
+sentin8-tls = { git = "https://github.com/Sentin8/sentin8-sdk", tag = "sdk-v0.6.3" }
+sentin8-app-contracts = { path = "sdk/crates/app-contracts" }
+sentin8-stat-sdk = { git = "https://github.com/Sentin8/sentin8-stat", tag = "stat-sdk-v0.6.2" }
+sentin8-secrets-sdk = { git = "https://github.com/Sentin8/sentin8-secrets", tag = "secrets-sdk-v0.2.0" }
+sentin8-app-sdk = { path = "sdk/facade" }
