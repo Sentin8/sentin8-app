@@ -31,7 +31,6 @@ pub struct DomainBinding {
 /// Generate the default domain for an app instance.
 ///
 /// Pattern: `{app}.{env}.{org_domain}`
-///
 /// `org_domain` is the org's entered domain (custom or default
 /// `{slug}.{base_domain}`), so every required subdomain is created from the
 /// org/env domains — no platform `app.{base}` wildcard. Matches tls's
