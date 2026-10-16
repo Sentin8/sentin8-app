@@ -4,7 +4,11 @@
     {
       "service_type": "sentin8:app",
       "subdomain": "app",
-      "binary": "sentin8-app"
+      "binary": "sentin8-app",
+      "telemetry_property": {
+        "slug": "app",
+        "name": "Sentin8:App Platform Telemetry"
+      }
     }
   ]
 }
