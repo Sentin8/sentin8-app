@@ -1,4 +1,4 @@
-# DESIGN.md: Sentin8:App — Detailed Design Document
+# Sentin8:App — Detailed Design Document
 
 ## 1. Scope & Context
 
