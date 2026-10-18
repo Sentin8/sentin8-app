@@ -19,7 +19,7 @@ use serde::Deserialize;
 use sqlx::Row;
 
 /// Query parameters accepting an explicit target environment.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 pub struct TargetEnvQuery {
     /// Target env id — REQUIRED for cross-env admin calls, never defaulted.
     #[serde(default)]
@@ -30,13 +30,28 @@ pub struct TargetEnvQuery {
 /// (auth DESIGN invariant 12): the env to enumerate is explicit — never
 /// derived from the caller's token env, since the calling M2M workload
 /// authenticates in the SYSTEM env.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 pub struct CustomerModeQuery {
     /// Environment to enumerate customer-mode instances in.
     pub env_id: uuid::Uuid,
 }
 
 /// `GET /v1/admin/ui/{page}` — RFW page definition for the requested page.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/ui/{page}",
+    params(
+        ("page" = String, Path, description = "RFW page name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "RFW page definition (rendered by Sentin8:Dash)", body = serde_json::Value),
+        (status = 403, description = "Caller lacks an app read/admin scope"),
+        (status = 404, description = "Unknown page"),
+    ),
+    security(("sentin8:app:read" = [])),
+    tag = "admin-ui",
+)]
 pub async fn get_admin_ui(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -382,6 +397,21 @@ pub async fn get_admin_ui(
 }
 
 /// `GET /v1/admin/{resource}` — returns a JSON array of admin data rows.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/{resource}",
+    params(
+        ("resource" = String, Path, description = "Admin data resource"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "The resource's rows for the RFW table", body = serde_json::Value),
+        (status = 403, description = "Caller lacks an app read/admin scope"),
+        (status = 404, description = "Unknown resource"),
+    ),
+    security(("sentin8:app:read" = [])),
+    tag = "admin-ui",
+)]
 pub async fn get_admin_data(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -464,6 +494,19 @@ pub async fn get_admin_data(
 /// `POST /v1/admin/instances/uninstall` — uninstall an app instance.
 /// Body: `{ "instance_id": "uuid" }`. Deletes the instance if it belongs
 /// to the caller's org/env (RLS-enforced).
+#[utoipa::path(
+    post,
+    path = "/v1/admin/instances/uninstall",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Instance uninstalled (RLS-own check enforced)", body = serde_json::Value),
+        (status = 403, description = "Caller lacks an app admin scope"),
+        (status = 404, description = "Unknown instance"),
+    ),
+    security(("sentin8:app:admin" = [])),
+    tag = "app",
+)]
 pub async fn uninstall_instance(
     State(state): State<AppState>,
     headers: HeaderMap,

@@ -1557,7 +1557,7 @@ pub async fn customer_mode_instances(
 #[utoipa::path(
     get,
     operation_id = "setup.status",
-    path = "/v1/app/setup/{instanceId}/status",
+    path = "/v1/app/setup/{id}/status",
     params(("instanceId" = Uuid, Path, description = "Instance ID")),
     responses(
         (status = 200, description = "Provisioning status", body = SetupResponse),
@@ -1604,6 +1604,16 @@ pub async fn setup_status(
 /// (no per-listing API key, no hostname-based resolution). The response includes
 /// instance metadata, the organization display name, and merged org→env branding
 /// from `sentin8_sys_branding` so apps can apply tenant branding without a separate call.
+#[utoipa::path(
+    get,
+    path = "/v1/app/runtime/context",
+    responses(
+        (status = 200, description = "Runtime context for the TLS-identified app (instance metadata, org name, merged branding)", body = serde_json::Value),
+        (status = 401, description = "No X-Sentin8-App-Id header / unknown instance"),
+    ),
+    security(),
+    tag = "app",
+)]
 pub async fn runtime_context(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -2419,6 +2429,15 @@ pub async fn execute_internal_step(
 // ── Health ───────────────────────────────────────────────────────────────
 
 /// `GET /v1/health` — liveness probe.
+#[utoipa::path(
+    get,
+    path = "/v1/health",
+    responses(
+        (status = 200, description = "Liveness (version, build, active connections)", body = serde_json::Value),
+    ),
+    security(),
+    tag = "meta",
+)]
 pub async fn health() -> Json<serde_json::Value> {
     let mut payload = serde_json::json!({ "status": "ok", "service": "app", "version": sentin8::build_info::id(), "build": sentin8::build_info::build_hash() });
     if let Some(n) = sentin8::middleware::traffic_counter::process_active_connections() {
