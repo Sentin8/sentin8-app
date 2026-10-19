@@ -45,7 +45,7 @@ pub struct CustomerModeQuery {
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "RFW page definition (rendered by Sentin8:Dash)", body = serde_json::Value),
+        (status = 200, description = "RFW page definition (rendered by Sentin8:Dash)", body = sentin8::rfw::AdminUiResponse),
         (status = 403, description = "Caller lacks an app read/admin scope"),
         (status = 404, description = "Unknown page"),
     ),
@@ -57,7 +57,7 @@ pub async fn get_admin_ui(
     headers: HeaderMap,
     Path(page): Path<String>,
     Query(q): Query<TargetEnvQuery>,
-) -> Result<Json<serde_json::Value>, (axum::http::StatusCode, String)> {
+) -> Result<Json<AdminUiResponse>, (axum::http::StatusCode, String)> {
     let _a = crate::auth::require_any_scope(
         &state.config,
         &headers,
@@ -391,9 +391,7 @@ pub async fn get_admin_ui(
             .build(),
         _ => return Err((axum::http::StatusCode::NOT_FOUND, format!("Unknown admin UI page: {page}"))),
     };
-    Ok(Json(
-        serde_json::to_value(AdminUiResponse::page(def)).unwrap(),
-    ))
+    Ok(Json(AdminUiResponse::page(def)))
 }
 
 /// `GET /v1/admin/{resource}` - returns a JSON array of admin data rows.
@@ -405,7 +403,7 @@ pub async fn get_admin_ui(
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "The resource's rows for the RFW table", body = serde_json::Value),
+        (status = 200, description = "The resource's rows for the RFW table", body = sentin8::rfw::policy_pages::AdminDataRows),
         (status = 403, description = "Caller lacks an app read/admin scope"),
         (status = 404, description = "Unknown resource"),
     ),
@@ -492,15 +490,22 @@ pub async fn get_admin_data(
 }
 
 /// `POST /v1/admin/instances/uninstall` - uninstall an app instance.
+/// The uninstall request body.
+#[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
+pub struct UninstallRequest {
+    /// The instance to uninstall.
+    pub instance_id: uuid::Uuid,
+}
+
 /// Body: `{ "instance_id": "uuid" }`. Deletes the instance if it belongs
 /// to the caller's org/env (RLS-enforced).
 #[utoipa::path(
     post,
     path = "/v1/admin/instances/uninstall",
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
-    request_body = serde_json::Value,
+    request_body = UninstallRequest,
     responses(
-        (status = 200, description = "Instance uninstalled (RLS-own check enforced)", body = serde_json::Value),
+        (status = 200, description = "Instance uninstalled (RLS-own check enforced)", body = sentin8::rfw::policy_pages::AdminRedirectAck),
         (status = 403, description = "Caller lacks an app admin scope"),
         (status = 404, description = "Unknown instance"),
     ),
@@ -511,7 +516,7 @@ pub async fn uninstall_instance(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<TargetEnvQuery>,
-    Json(body): Json<serde_json::Value>,
+    Json(body): Json<UninstallRequest>,
 ) -> Result<Json<serde_json::Value>, (axum::http::StatusCode, String)> {
     let _a = crate::auth::require_any_scope(
         &state.config,
@@ -558,10 +563,7 @@ pub async fn uninstall_instance(
             .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         org.unwrap_or(sentin8::config::SYSTEM_ORG_ID)
     };
-    let instance_id = body.get("instance_id").and_then(|v| v.as_str()).ok_or((
-        axum::http::StatusCode::BAD_REQUEST,
-        "missing instance_id".into(),
-    ))?;
+    let instance_id = body.instance_id.to_string();
 
     let deleted = {
         let mut tx = state
@@ -573,7 +575,7 @@ pub async fn uninstall_instance(
         let res = sqlx::query(
             "DELETE FROM sys.app_instances WHERE id = $1 AND org_id = $2 AND env_id = $3 RETURNING app_slug",
         )
-        .bind(instance_id)
+        .bind(&instance_id)
         .bind(org_id)
         .bind(env_id)
         .fetch_optional(&mut *tx)
@@ -600,7 +602,7 @@ pub async fn uninstall_instance(
         &state.pool,
         env_id,
         "sentin8:app:instance:uninstalled",
-        serde_json::json!({ "id": instance_id }),
+        serde_json::json!({ "id": instance_id.clone() }),
     )
     .await;
     crate::handlers::write_admin_audit(
@@ -608,7 +610,7 @@ pub async fn uninstall_instance(
         env_id,
         "instance.uninstall",
         "sys_app_instance",
-        instance_id,
+        instance_id.as_str(),
     )
     .await;
 

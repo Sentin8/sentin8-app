@@ -20,6 +20,92 @@ use crate::auth;
 use crate::config::AppConfig;
 use crate::steps::{self, StepExecuteRequest, StepExecuteResponse};
 use sentin8::rfw::response::AdminUiResponse;
+use sentin8::middleware::health::LiveHealth;
+
+// ── Typed read models (OAPEC-9) ────────────────────────────────────────
+
+/// One customer-mode app instance.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
+pub struct CustomerModeInstance {
+    /// The instance id.
+    pub instance_id: Uuid,
+    /// The app slug.
+    pub app_slug: String,
+}
+
+/// `GET /v1/app/instances/customer-mode` payload.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
+pub struct CustomerModeInstancesResponse {
+    /// The queried env.
+    pub env_id: String,
+    /// Customer-mode instances in the env.
+    pub instances: Vec<CustomerModeInstance>,
+}
+
+/// `GET /v1/app/runtime/context` payload - the full runtime context the
+/// TLS-identified app instance serves the SPA with (identity, hostnames,
+/// branding, feature flags).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
+pub struct AppRuntimeContext {
+    /// Owning org id.
+    pub org_id: String,
+    /// Target env id.
+    pub env_id: String,
+    /// The app-instance id.
+    pub application_id: uuid::Uuid,
+    /// The app slug.
+    pub app_slug: String,
+    /// The host the SPA is served from.
+    pub hostname: String,
+    /// The platform auth domain.
+    pub sentin8_auth_domain: String,
+    /// The env auth-domain override (absolute URL; empty = platform derivation).
+    pub auth_domain: String,
+    /// Self-serve sign-up allowance.
+    pub allow_signup: bool,
+    /// The platform BFF domain.
+    pub sentin8_bff_domain: String,
+    /// The instance's custom domain (empty when absent).
+    pub custom_domain: String,
+    /// `platform`/`custom`/`derived`.
+    pub domain_type: String,
+    /// Instance status.
+    pub status: String,
+    /// Instance name.
+    pub instance_name: String,
+    /// Instance description.
+    pub instance_description: String,
+    /// Org display name.
+    pub organization_name: String,
+    /// OAuth client id.
+    pub oauth_client_id: String,
+    /// Feature flags document.
+    pub feature_flags: serde_json::Value,
+    /// The app's declared backend URL.
+    pub backend_url: String,
+    /// App display name.
+    pub app_name: String,
+    /// App description.
+    pub app_description: String,
+    /// Merged org+env logo URL.
+    pub logo_url: Option<String>,
+    /// Merged icon URL.
+    pub logo_icon_url: Option<String>,
+    /// Merged primary color.
+    pub primary_color: Option<String>,
+    /// Merged accent color.
+    pub accent_color: Option<String>,
+    /// Merged font family.
+    pub font_family: Option<String>,
+    /// Merged theme mode.
+    pub theme_mode: Option<String>,
+    /// Merged custom CSS.
+    pub custom_css: Option<String>,
+    /// Merged sign-in tagline.
+    pub sign_in_text: Option<String>,
+}
+
+
 
 /// Shared application state for the App service.
 #[derive(Clone)]
@@ -1491,7 +1577,7 @@ pub async fn setup_instance(
     path = "/v1/app/instances/customer-mode",
     params(("env_id" = Uuid, Query, description = "Target environment id")),
     responses(
-        (status = 200, description = "Customer-mode instances in the env", body = serde_json::Value),
+        (status = 200, description = "Customer-mode instances in the env", body = CustomerModeInstancesResponse),
         (status = 400, description = "Missing env_id"),
         (status = 403, description = "Missing app:instances:read scope or non-M2M token"),
     ),
@@ -1502,7 +1588,7 @@ pub async fn customer_mode_instances(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<crate::admin_ui::CustomerModeQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<CustomerModeInstancesResponse>, (StatusCode, String)> {
     let a = auth::verify_token(&state.config, &headers).await?;
     crate::policy::require_policy(
         &state.policy,
@@ -1542,15 +1628,16 @@ pub async fn customer_mode_instances(
         .await
         .map_err(err_db)?
     };
-    Ok(Json(serde_json::json!({
-        "env_id": q.env_id,
-        "instances": rows.iter().map(|r| {
-            serde_json::json!({
-                "instance_id": r.get::<Uuid, _>("id"),
-                "app_slug": r.get::<String, _>("app_slug"),
+    Ok(Json(CustomerModeInstancesResponse {
+        env_id: q.env_id.to_string(),
+        instances: rows
+            .iter()
+            .map(|r| CustomerModeInstance {
+                instance_id: r.get::<Uuid, _>("id"),
+                app_slug: r.get::<String, _>("app_slug"),
             })
-        }).collect::<Vec<_>>(),
-    })))
+            .collect::<Vec<_>>(),
+    }))
 }
 
 /// `GET /v1/app/setup/{instanceId}/status` - provisioning status.
@@ -1608,7 +1695,7 @@ pub async fn setup_status(
     get,
     path = "/v1/app/runtime/context",
     responses(
-        (status = 200, description = "Runtime context for the TLS-identified app (instance metadata, org name, merged branding)", body = serde_json::Value),
+        (status = 200, description = "Runtime context for the TLS-identified app (instance metadata, org name, merged branding)", body = AppRuntimeContext),
         (status = 401, description = "No X-Sentin8-App-Id header / unknown instance"),
     ),
     security(),
@@ -1617,7 +1704,7 @@ pub async fn setup_status(
 pub async fn runtime_context(
     State(state): State<AppState>,
     headers: HeaderMap,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<AppRuntimeContext>, (StatusCode, String)> {
     let host = headers
         .get("host")
         .and_then(|v| v.to_str().ok())
@@ -1811,37 +1898,37 @@ pub async fn runtime_context(
         .flatten()
         .unwrap_or_default();
     let allow_signup: bool = row.try_get::<bool, _>("allow_signup").unwrap_or(true);
-    Ok(Json(serde_json::json!({
-           "org_id" : org_id,
-           "env_id" : env_id,
-           "application_id" : row.get::<Uuid, _>("id"),
-           "app_slug" : row.get::<String, _>("app_slug"),
-           "hostname": row.try_get::<String, _>("hostname").unwrap_or_default(),
-           "sentin8_auth_domain" : env_auth_domain,
-           "auth_domain" : auth_domain,
-           "allow_signup" : allow_signup,
-           "sentin8_bff_domain" : sentin8_bff_domain,
-           "custom_domain" : custom_domain_val,
-           "domain_type" : row.try_get::<String, _>("domain_type").unwrap_or_default(),
-           "status": row.get::<String, _>("status"),
-           "instance_name" : row.try_get::<String, _>("instance_name").unwrap_or_default(),
-           "instance_description" : row.try_get::<String, _>("instance_description").unwrap_or_default(),
-           "organization_name" : row.try_get::<String, _>("org_name").unwrap_or_default(),
-           "oauth_client_id" : row.try_get::<String, _>("oauth_client_id").unwrap_or_default(),
-           "feature_flags" : row.try_get::<serde_json::Value, _>("feature_flags").unwrap_or(serde_json::json!({})),
-           "backend_url" : row.try_get::<String, _>("backend_url").unwrap_or_default(),
-           "app_name" : row.try_get::<String, _>("app_name").unwrap_or_default(),
-           "app_description" : row.try_get::<String, _>("description").unwrap_or_default(),
+    Ok(Json(AppRuntimeContext {
+           org_id: org_id.to_string(),
+           env_id: env_id.to_string(),
+           application_id: row.get::<Uuid, _>("id"),
+           app_slug: row.get::<String, _>("app_slug"),
+           hostname: row.try_get::<String, _>("hostname").unwrap_or_default(),
+           sentin8_auth_domain: env_auth_domain,
+           auth_domain: auth_domain,
+           allow_signup: allow_signup,
+           sentin8_bff_domain: sentin8_bff_domain,
+           custom_domain: custom_domain_val,
+           domain_type: row.try_get::<String, _>("domain_type").unwrap_or_default(),
+           status: row.get::<String, _>("status"),
+           instance_name: row.try_get::<String, _>("instance_name").unwrap_or_default(),
+           instance_description: row.try_get::<String, _>("instance_description").unwrap_or_default(),
+           organization_name: row.try_get::<String, _>("org_name").unwrap_or_default(),
+           oauth_client_id: row.try_get::<String, _>("oauth_client_id").unwrap_or_default(),
+           feature_flags: row.try_get::<serde_json::Value, _>("feature_flags").unwrap_or(serde_json::json!({})),
+           backend_url: row.try_get::<String, _>("backend_url").unwrap_or_default(),
+           app_name: row.try_get::<String, _>("app_name").unwrap_or_default(),
+           app_description: row.try_get::<String, _>("description").unwrap_or_default(),
     // Branding (merged org→env)
-           "logo_url" : branding.logo_url,
-           "logo_icon_url" : branding.logo_icon_url,
-           "primary_color" : branding.primary_color,
-           "accent_color" : branding.accent_color,
-           "font_family" : branding.font_family,
-           "theme_mode" : branding.theme_mode,
-           "custom_css" : branding.custom_css,
-           "sign_in_text" : branding.sign_in_text,
-       })))
+           logo_url: branding.logo_url,
+           logo_icon_url: branding.logo_icon_url,
+           primary_color: branding.primary_color,
+           accent_color: branding.accent_color,
+           font_family: branding.font_family,
+           theme_mode: branding.theme_mode,
+           custom_css: branding.custom_css,
+           sign_in_text: branding.sign_in_text,
+    }))
 }
 
 // ── Admin API (Stories -16) ───────────────────────────────────────
@@ -2433,17 +2520,19 @@ pub async fn execute_internal_step(
     get,
     path = "/v1/health",
     responses(
-        (status = 200, description = "Liveness (version, build, active connections)", body = serde_json::Value),
+        (status = 200, description = "Liveness (version, build, active connections)", body = sentin8::middleware::health::LiveHealth),
     ),
     security(),
     tag = "meta",
 )]
-pub async fn health() -> Json<serde_json::Value> {
-    let mut payload = serde_json::json!({ "status": "ok", "service": "app", "version": sentin8::build_info::id(), "build": sentin8::build_info::build_hash() });
-    if let Some(n) = sentin8::middleware::traffic_counter::process_active_connections() {
-        payload["active_connections"] = serde_json::json!(n);
-    }
-    Json(payload)
+pub async fn health() -> Json<LiveHealth> {
+    Json(LiveHealth {
+        status: "ok".to_string(),
+        service: Some("app".to_string()),
+        version: Some(sentin8::build_info::id()),
+        build: Some(sentin8::build_info::build_hash().to_string()),
+        active_connections: sentin8::middleware::traffic_counter::process_active_connections().map(|n| n as i64),
+    })
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────
