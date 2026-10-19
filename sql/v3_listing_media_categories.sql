@@ -4,7 +4,7 @@
 -- SPDX-License-Identifier: Apache-2.0
 
 -- ── APP-3: listing media + categories ──────────────────────────────────
--- Media: typed entries stored BY REFERENCE — bytes live in Sentin8:Storage
+-- Media: typed entries stored BY REFERENCE - bytes live in Sentin8:Storage
 -- under `app/{listing_id}/{role}.{ext}`; the JSONB row holds only the
 -- reference (post DESIGN §5 secrets rule analog: no blobs in tables).
 -- Categories: a join table keyed by slug so the store can filter; the

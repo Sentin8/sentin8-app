@@ -1,4 +1,4 @@
-# Design Doc: Sentin8:App — Third-Party App Store & Instance Management
+# Design Doc: Sentin8:App - Third-Party App Store & Instance Management
 
 ## 1. Summary
 
@@ -15,7 +15,7 @@ Sentin8:Bus.
 
 - **Apps are tenants too.** Third-party apps need provisioning surfaces
   (roles, groups, memberships, OAuth clients) without ever touching
-  other services' tables — the app store is the composition point where
+  other services' tables - the app store is the composition point where
   an install becomes a full stack of platform resources.
 - **Backend URL is metadata, not configuration.** App:App is a platform,
   not an app registry with backend knowledge: the developer's
@@ -27,7 +27,7 @@ Sentin8:Bus.
   and RLS enforces the same tiers on the tables.
 - **App lifecycles need workflow machinery.** Onboarding (KYC check,
   approval review, document upload) is a multi-step compensable process
-  — a natural Sentin8:Flow workflow with proxy-back steps.
+  - a natural Sentin8:Flow workflow with proxy-back steps.
 
 ## 3. Architecture & High-Level Design
 
@@ -55,46 +55,46 @@ graph TD
     end
 ```
 
-- **Store API** — public catalog of listings (`usr`/`env`/`public`
+- **Store API** - public catalog of listings (`usr`/`env`/`public`
   visibility tiers enforced by visibility-scoped RLS); catalog admins
   manage listings via the admin API.
-- **Setup** — installing a listing provisions the full resource stack:
+- **Setup** - installing a listing provisions the full resource stack:
   Auth roles (per the listing's declared roles, each carrying its own
   scope set), groups, the default signup role wiring, an OAuth client
   (DCR), a domain (default `{app}.{env}.{org_domain}` or DNS-verified
   custom), a Stat property, and the embeddable Web SDK snippet.
-- **Runtime context** — header-based (no auth) endpoint the app's
+- **Runtime context** - header-based (no auth) endpoint the app's
   frontend bootstrap calls to learn its instance context.
-- **Flow integration** — App registers its step-handler profile
+- **Flow integration** - App registers its step-handler profile
   (domain `app`); Flow calls back `POST /v1/internal/steps/execute` for
   `KYCCheckStep`, `ApprovalReviewStep` (delegates to Flow's
   `ManualDecisionStep`), and `DocumentUploadStep`.
-- **Authorization** — Shield (`require_policy`) gates admin paths; the
+- **Authorization** - Shield (`require_policy`) gates admin paths; the
   enforced scope-mirror set over LIVE effective scopes is the only
-  gate. Cross-env admin calls REQUIRE `target_env_id` — no fallback to
+  gate. Cross-env admin calls REQUIRE `target_env_id` - no fallback to
   the token's env, never defaulted.
 
 ## 4. Key Traits and Data Structures
 
 - **`StoreListingResponse` / `CreateListingRequest` /
-  `UpdateListingRequest`** — the listing wire types: identity, backend
+  `UpdateListingRequest`** - the listing wire types: identity, backend
   URL metadata, DCR support, OAuth defaults, visibility tier,
   declared `ListingRole`s (name + scopes), and `default_signup_role`.
-- **`SetupRequest` / `SetupResponse`** — install: listing id, instance
+- **`SetupRequest` / `SetupResponse`** - install: listing id, instance
   naming, optional custom domain, the org's selected Auth URL, and the
   public sign-up flag.
-- **`AuthProvisioner`** — the Auth membership provisioning client
+- **`AuthProvisioner`** - the Auth membership provisioning client
   (DCR-backed M2M token source cached per process); verbs for role,
   role nesting, group, group role, group member, user role. App never
-  INSERTs `auth.*` tables — the owner exposes the verbs.
-- **`OAuthClient` + `DcrError`** — the RFC 7591 DCR result stored on the
+  INSERTs `auth.*` tables - the owner exposes the verbs.
+- **`OAuthClient` + `DcrError`** - the RFC 7591 DCR result stored on the
   instance record (`client_id`, optional `client_secret` for
   confidential clients, issued-at).
-- **`DomainBinding`** — FQDN + instance + DNS TXT verification token
+- **`DomainBinding`** - FQDN + instance + DNS TXT verification token
   (SHA-256-derived); custom domains verify via TXT record challenge.
-- **`StepExecuteRequest` / `StepExecuteResponse`** — the Flow
+- **`StepExecuteRequest` / `StepExecuteResponse`** - the Flow
   proxy-back contract for App's step kinds.
-- **`StatEventListener`** — the SSE Bus consumer for
+- **`StatEventListener`** - the SSE Bus consumer for
   `sentin8:stat.aggregate.updated` events on the `stat-pipeline` family;
   applies each event as a listing usage metric through Stat's ingest
   surface (`POST /v1/m/metric`, the shared `sentin8:stat:measure` M2M
@@ -108,16 +108,16 @@ graph TD
   is prohibited (no grant, no matter how convenient). Trade-off: a
   per-install round trip per resource, accepted for isolation and for
   keeping Auth the single authority on its own rows. The client is a
-  deliberate copy of sys's provisioner (peers cannot share a crate —
+  deliberate copy of sys's provisioner (peers cannot share a crate -
   dependency direction is one-way).
 - **Visibility tiers without an `org` tier.** `usr` (per-user),
   `env` (per-environment), `public` (platform). Org-wide visibility was
-  dropped — it is achieved via `public` or per-env replication; a
+  dropped - it is achieved via `public` or per-env replication; a
   separate org tier duplicated both and blurred the RLS policy shape.
 - **Roles declared on the listing.** The app developer declares the
   roles (and scope sets) the app needs; install provisions them so
   admin UIs can assign real roles on day one. Trade-off: a malicious
-  listing could over-declare scopes — mitigated because scope grants
+  listing could over-declare scopes - mitigated because scope grants
   evaluate against the platform vocabulary and the DCR grant closure.
 - **`default_signup_role` as a listing field.** Env-realm sign-ups need
   a baseline role; keeping it listing-level (not per-role) makes the
@@ -134,12 +134,12 @@ graph TD
   `redirect_uri` is the derived BFF callback
   (`https://bff.{hostname}/auth/callback`); when the listing declares
   an `oauth_defaults.redirect_uris` allow-list the callback MUST match
-  one of its entries exactly — a mismatch fails the install (400)
+  one of its entries exactly - a mismatch fails the install (400)
   rather than registering an off-list callback (no key → derived
   callback is the default).
 - **Domain derivation over wildcard.** Every subdomain derives from the
   org's entered domain (custom or `{slug}.{base}`); the obsolete
-  `*.app.{base}` wildcard pattern is gone — a wildcard certificate per
+  `*.app.{base}` wildcard pattern is gone - a wildcard certificate per
   org was the rejected alternative (certificate sprawl + verification
   ambiguity).
 - **Stat listener as an SSE consumer.** Aggregate-updated events arrive
@@ -147,23 +147,23 @@ graph TD
   backoff. A polling loop would multiply Bus traffic for the same
   effect.
 - **Daily telemetry via Cron + Stat.** `instances.count`,
-  `listings.count`, `installs.daily` counters (dimension: env) —
+  `listings.count`, `installs.daily` counters (dimension: env) -
   emission is scheduled, idempotent, and fire-and-forget; the M2M client
   is DCR-registered (scope `sentin8:stat:measure`) with credentials
   persisted for restart.
 - **Events via local outbox.** Domain changes write an `inbox` row in
-  the same transaction (tenant context set inside one transaction —
+  the same transaction (tenant context set inside one transaction -
   the context is transaction-local), so events are durable exactly when
   the domain write commits.
 - **Rejected: instance setup as one synchronous transaction.** The
-  install touches Auth (roles), Auth (DCR), domains (DNS), and Stat —
+  install touches Auth (roles), Auth (DCR), domains (DNS), and Stat -
   a distributed transaction across services is not achievable; the Flow
   workflow with compensating steps is the durable equivalent.
 
 ## 6. Internal Implementation & Invariants (Private Design)
 
 - **Invariants:**
-  - Cross-env admin calls require `target_env_id` validated via RBAC —
+  - Cross-env admin calls require `target_env_id` validated via RBAC -
     REQUIRED, no fallback to the token env.
   - RLS context is set on the SAME connection, inside the same explicit
     transaction as the dependent statements (transaction-local
@@ -171,12 +171,12 @@ graph TD
     silently filter every row).
   - Listing role names are unique per `(org_id, env_id)`; a stable app
     prefix (`ebank-admin`) is the convention to avoid collisions.
-  - Visibilities are exactly `usr`, `env`, `public` — the `org` tier
+  - Visibilities are exactly `usr`, `env`, `public` - the `org` tier
     does not exist.
   - The runtime context endpoint is header-based and carries no tokens.
   - DCR secrets are returned once and stored on the instance record;
     listing rows never carry client secrets.
-  - Events flow through the local `inbox` (Bus relay) — never a direct
+  - Events flow through the local `inbox` (Bus relay) - never a direct
     write to a shared queue.
 - **Boot (shell-owned).** The platform shell owns registration, PQ
   provider, config, capped pool, PG18 check, state binding, OpenAPI
@@ -187,7 +187,7 @@ graph TD
 - **Setup is a Flow workflow, not a monolith.** The onboarding steps
   proxy-back to App's internal endpoint; `ApprovalReviewStep` pauses in
   Flow's `ManualDecisionStep` until approved. KYC and document upload
-  are stubs today — the workflow shape is the contract.
+  are stubs today - the workflow shape is the contract.
 
 ## 7. Unresolved Questions / Future Designs
 
@@ -199,7 +199,7 @@ graph TD
   (`stable` default). Manifests may pin `version`/`channel`.
 - Listing media (APP-3): `store_listings.media` JSONB holds typed
   by-reference entries (`{role, resolution, storage_key}`); bytes live in
-  Sentin8:Storage under `app/{listing_id}/{role}.{ext}` — no blobs in
+  Sentin8:Storage under `app/{listing_id}/{role}.{ext}` - no blobs in
   tables. Categories are a `listing_categories (category, app_slug)` join
   table; `GET /v1/app/store/listings?category=` filters.
 - Domain verification supports TXT and CNAME (APP-5): the CNAME challenge

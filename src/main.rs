@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Sentin8 App — third-party app store, instance management.
+//! Sentin8 App - third-party app store, instance management.
 //!
 //! Boot runs on the platform `sentin8-shell` crate: registration flag,
 //! PQ provider, config, capped pool, PG18 check, state binding, OpenAPI

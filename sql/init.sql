@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 -- SPDX-License-Identifier: Apache-2.0
 
--- Sentin8:App — app store listings, instances mapping, and audit events.
+-- Sentin8:App - app store listings, instances mapping, and audit events.
 --
 -- Note: Sentin8:App instances are stored in sentin8_sys_app_instances (owned by
 -- Sentin8:Sys). The Stat integration columns (sentin8_stat_property_id,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS app.store_listings (
     created_by      TEXT NOT NULL DEFAULT '',
     -- Owning user (Sentin8:Auth subject id). Populated from the token `sub` at
     -- create time. Used by visibility-scoped RLS (§4.3a) when visibility =
-    -- 'usr' — only this user (+ sys/org/env admins) can see the row.
+    -- 'usr' - only this user (+ sys/org/env admins) can see the row.
     usr_id          TEXT NOT NULL DEFAULT '',
     -- Visibility controls which orgs/envs/users can see this listing in
     -- their App Store. 'public' (default) = all orgs and envs; 'env' = only
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS app.store_listings (
     -- See §4.3a.
     visibility      TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('usr', 'env', 'public')),
     -- Owning env. NULL for 'public'/'usr' listings. Used to scope 'env'
-    -- visibility to the creator's env. org_id is NOT stored — it is resolved
+    -- visibility to the creator's env. org_id is NOT stored - it is resolved
     -- from env_id via sentin8_sys_environments at query time (env_id is
     -- globally unique).
     env_id          UUID,
@@ -86,7 +86,7 @@ CREATE POLICY app_store_listings_update ON app.store_listings
         )
     );
 -- No DELETE policy on app.store_listings: listings are archived
--- (status = 'archived' via update_listing paths), never deleted —
+-- (status = 'archived' via update_listing paths), never deleted -
 -- the former bypass-only policy admitted nothing for any NOBYPASSRLS
 -- role and was removed.
 
@@ -231,7 +231,7 @@ CREATE POLICY audit_journal_dml ON app.audit_journal
     WITH CHECK (sentin8_context_initialized() AND env_id = sentin8_current_env_id());
 
 
--- ── Schema grants (service-owned — the 2026-10-03 ownership pass) ─────
+-- ── Schema grants (service-owned - the 2026-10-03 ownership pass) ─────
 -- This service's own schema: USAGE for its role (platform.sql no longer
 -- seeds per-service USAGE; the service declares it here).
 GRANT USAGE ON SCHEMA app TO sentin8_app_service;

@@ -3,9 +3,9 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Story — Domain binding for App app instances.
+//! Story - Domain binding for App app instances.
 //!
-//! Default domain pattern: `{app}.{env}.{org_domain}` — every subdomain is
+//! Default domain pattern: `{app}.{env}.{org_domain}` - every subdomain is
 //! derived from the org's entered domain (custom or default `{slug}.{base}`).
 //! The obsolete `*.app.{base_domain}` wildcard pattern has been removed.
 //! Custom domains are verified via DNS TXT record challenge.
@@ -33,7 +33,7 @@ pub struct DomainBinding {
 /// Pattern: `{app}.{env}.{org_domain}`
 /// `org_domain` is the org's entered domain (custom or default
 /// `{slug}.{base_domain}`), so every required subdomain is created from the
-/// org/env domains — no platform `app.{base}` wildcard. Matches tls's
+/// org/env domains - no platform `app.{base}` wildcard. Matches tls's
 /// `derive_mappings` app pattern (`{app_slug}.{env_domain}`).
 ///
 /// `app` is slugified (lowercase, alphanumerics + hyphens only) to keep the
@@ -50,7 +50,7 @@ pub fn generate_default_domain(app: &str, env: &str, org_domain: &str) -> String
 ///
 /// Returns a deterministic, URL-safe token derived from the domain SHA-256
 /// hash plus 16 random bytes (so re-generating yields a new challenge).
-/// Prefix `sentin8-domain-verify=` is NOT included — callers place the raw
+/// Prefix `sentin8-domain-verify=` is NOT included - callers place the raw
 /// token as the TXT record value.
 pub fn generate_dns_txt_token(domain: &str) -> String {
     let mut hasher = Sha256::new();
@@ -59,7 +59,7 @@ pub fn generate_dns_txt_token(domain: &str) -> String {
     let rand_bytes: [u8; 16] = rand::random();
     hasher.update(rand_bytes);
     let digest = hasher.finalize();
-    // Use the first 16 bytes (32 hex chars) — enough entropy for a challenge.
+    // Use the first 16 bytes (32 hex chars) - enough entropy for a challenge.
     let hex: String = digest.iter().take(16).map(|b| format!("{b:02x}")).collect();
     format!("sentin8-verify-{hex}")
 }
@@ -98,7 +98,7 @@ pub fn verify_domain(domain: &str, txt_record: &str) -> Result<bool, String> {
 }
 
 /// The CNAME record NAME a tenant must create for CNAME verification
-/// (APP-5): `{token}.verify.{domain}` — apex domains cannot carry TXT
+/// (APP-5): `{token}.verify.{domain}` - apex domains cannot carry TXT
 /// at the apex-adjacent name some DNS providers reserve, so a delegating
 /// tenant proves control by pointing a CNAME at the challenge host.
 pub fn cname_challenge_host(domain: &str, token: &str) -> String {
@@ -109,7 +109,7 @@ pub fn cname_challenge_host(domain: &str, token: &str) -> String {
 /// `{token}.verify.{domain}` (e.g. via `dig CNAME {token}.verify.{domain}`)
 /// and submits the resolved target here. Verification passes when the
 /// target matches the platform's expected value
-/// `cname.{instance_hostname}` — the challenge host aliasing the app
+/// `cname.{instance_hostname}` - the challenge host aliasing the app
 /// instance's platform hostname proves domain control (the tenant can
 /// only create that record inside the zone they claim).
 pub fn verify_cname(
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn default_domain_supports_custom_org_domain() {
-        // Custom org domain: no .{base} suffix — the app subdomain is
+        // Custom org domain: no .{base} suffix - the app subdomain is
         // created directly under the org's entered domain.
         let d = generate_default_domain("ebank", "prod", "ibank.local");
         assert_eq!(d, "ebank.prod.ibank.local");

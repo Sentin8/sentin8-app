@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Story — OAuth DCR (Dynamic Client Registration) integration with
+//! Story - OAuth DCR (Dynamic Client Registration) integration with
 //! Auth for App app instances.
 //!
 //! App registers an OAuth client with Auth via RFC 7591 `POST /oauth/register`
@@ -48,7 +48,7 @@ pub enum DcrError {
 ///   flow.
 ///
 /// Registers a **public** PKCE client (`token_endpoint_auth_method = "none"`,
-/// `grant_types = ["authorization_code", "refresh_token"]`) by default — this
+/// `grant_types = ["authorization_code", "refresh_token"]`) by default - this
 /// matches the BFF pattern used during app setup. The returned `OAuthClient`
 /// captures the `client_id`, optional `client_secret`, and
 /// `client_id_issued_at`.
@@ -69,7 +69,7 @@ pub async fn register_oauth_client(
     .await
 }
 
-/// Story — Register an OAuth client with custom grant types.
+/// Story - Register an OAuth client with custom grant types.
 ///
 /// Used for the env-scoped CIBA client (adds `urn:openid:params:grant-type:ciba`)
 /// and the staff client (standard grants). Same public PKCE client otherwise.
@@ -151,7 +151,7 @@ struct DcrResponse {
 #[cfg(test)]
 mod tests {
 
-    /// Install the Graviola PQ crypto provider once — reqwest panics with
+    /// Install the Graviola PQ crypto provider once - reqwest panics with
     /// "No provider set" when a client is built without one.
     fn install_provider() {
         use std::sync::Once;

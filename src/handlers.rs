@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! App HTTP handlers — store listings, setup, runtime context, admin.
+//! App HTTP handlers - store listings, setup, runtime context, admin.
 
 use std::sync::Arc;
 
@@ -30,7 +30,7 @@ pub struct AppState {
     pub pool: sqlx::PgPool,
     /// M2M-backed Bus client built at startup via DCR (RFC 7591).
     pub _bus_client: sentin8::bus::client::BusClient,
-    /// Shield engine ( — ): additional gate after scope.
+    /// Shield engine ( - ): additional gate after scope.
     pub policy: Arc<crate::policy::Engine>,
     /// Shared Sentin8:Policy admin surface .
     pub admin: sentin8::shield::admin::SharedAdminState,
@@ -54,7 +54,7 @@ pub struct AppState {
 ///   consult it to decide which role to auto-assign a new user to.
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct ListingRole {
-    /// Role name — unique per `(org_id, env_id)`, stable app prefix
+    /// Role name - unique per `(org_id, env_id)`, stable app prefix
     /// recommended.
     pub name: String,
     /// Human description.
@@ -73,7 +73,7 @@ pub struct ListingRole {
     /// Resolution happens server-side at install:
     /// `effective_scopes = own.scopes ∪ included.scopes`. Cycles
     /// and missing references are rejected at install with a
-    /// 400. No DB schema change — `sentin8_auth_roles` only stores the
+    /// 400. No DB schema change - `sentin8_auth_roles` only stores the
     /// resolved permission set, not the include graph.
     #[serde(default)]
     pub includes: Vec<String>,
@@ -91,7 +91,7 @@ pub(crate) async fn set_tenant_context_for_admin(conn: &mut sqlx::PgConnection, 
     set_tenant_context(conn, env_id).await;
 }
 
-/// Extended tenant context (Epics 15.5 / 15.6) — passes admin flags +
+/// Extended tenant context (Epics 15.5 / 15.6) - passes admin flags +
 /// Auth user id for visibility-scoped RLS on `sentin8_app_store_listings`.
 async fn set_tenant_context_ext(conn: &mut sqlx::PgConnection, auth: &crate::auth::AuthContext) {
     let _ = sqlx::query("SELECT sentin8_set_tenant_context($1, $2, $3, $4, $5, false, $6, $7)")
@@ -107,7 +107,7 @@ async fn set_tenant_context_ext(conn: &mut sqlx::PgConnection, auth: &crate::aut
 }
 
 /// Cross-env authorization ( rule 5): the caller must hold a role
-/// or group in `target_env_id` — the service scope alone is not sufficient.
+/// or group in `target_env_id` - the service scope alone is not sufficient.
 /// Platform admins (`sentin8:sys:admin`) and env admins (`sentin8:sys:env:admin` for their
 /// own env) are admitted. Mirrors the org-membership predicate in
 /// Sentin8:Sys `list_organizations`.
@@ -126,7 +126,7 @@ async fn require_target_env_access(
     // Same-connection tenant context : `sys_environments_select` and
     // the auth RBAC tables' policies gate on `sentin8_context_initialized`.
     // The context is set for the TARGET env inside ONE explicit transaction
-    // (transaction-local `set_config(..., true)`) — on an autocommit
+    // (transaction-local `set_config(..., true)`) - on an autocommit
     // connection the context evaporates before the query runs and FORCE RLS
     // hides every row (fail-closed → a caller WITH membership 403s).
     let mut tx = pool.begin().await.map_err(err_db)?;
@@ -164,7 +164,7 @@ async fn require_target_env_access(
 
 /// Resolve the tenant env for a handler that accepts `target_env_id`.
 ///
-/// Fix A : `target_env_id` is REQUIRED — 400 when missing, no fallback
+/// Fix A : `target_env_id` is REQUIRED - 400 when missing, no fallback
 /// to the token env. Fix D : cross-env callers must hold RBAC membership
 /// in the target env.
 async fn resolve_target_env(
@@ -183,7 +183,7 @@ async fn resolve_target_env(
 
 // ── Store API ───────────────────────────────────────────────────────────
 
-/// Allowed visibility values for store listings (Epic 15.5 — 'usr' added).
+/// Allowed visibility values for store listings (Epic 15.5 - 'usr' added).
 const VISIBILITIES: &[&str] = &["usr", "env", "public"];
 
 /// Allowed release channels for store listings (APP-4): install resolves
@@ -266,7 +266,7 @@ pub struct CreateListingRequest {
     /// `stable`.
     #[serde(default)]
     pub channel: Option<String>,
-    /// Media entries (APP-3): typed by-reference descriptors —
+    /// Media entries (APP-3): typed by-reference descriptors -
     /// `{role, resolution, storage_key}`; bytes live in Sentin8:Storage.
     #[serde(default)]
     pub media: Option<serde_json::Value>,
@@ -275,7 +275,7 @@ pub struct CreateListingRequest {
     pub categories: Option<Vec<String>>,
 }
 
-/// `POST /v1/app/store/listings` — create a store listing.
+/// `POST /v1/app/store/listings` - create a store listing.
 ///
 /// Epic 15.5.5: populates `usr_id` from the token `sub` (the creator).
 /// Visibility is immutable after `status = 'published'` (enforced in
@@ -349,7 +349,7 @@ pub async fn create_listing(
     .await
     .map_err(err_db)?;
     let listing = row_to_listing(&row);
-    // APP-3: write the category rows in the SAME transaction — a listing's
+    // APP-3: write the category rows in the SAME transaction - a listing's
     // categories are part of its domain change (replacing the set is
     // delete-then-insert; UNIQUE (category, app_slug) makes it idempotent).
     if let Some(cats) = &req.categories {
@@ -370,7 +370,7 @@ pub async fn create_listing(
         }
     }
     // Transactional emission : the inbox row commits with the domain
-    // change — a crash between the two can never lose the event.
+    // change - a crash between the two can never lose the event.
     emit_event_tx(
         &mut conn,
         env_id,
@@ -392,18 +392,18 @@ pub async fn create_listing(
     Ok(Json(listing))
 }
 
-/// `GET /v1/app/store/listings` — list published store listings visible to
+/// `GET /v1/app/store/listings` - list published store listings visible to
 /// the caller.
 ///
 /// Epic 15.5.5: RLS is the single source of truth for visibility. The
-/// service layer no longer adds a `WHERE org_id = $1` filter — the `usr` and
+/// service layer no longer adds a `WHERE org_id = $1` filter - the `usr` and
 /// `public` tiers deliberately admit rows that do not match the caller's
 /// org_id. We only filter `status = 'published'` (business rule) and rely on
 /// the visibility-scoped RLS policy to admit the right rows.
 /// Query for `GET /v1/app/store/listings` (APP-3).
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct StoreListQuery {
-    /// Filter by category slug (APP-3) — listings carrying this category.
+    /// Filter by category slug (APP-3) - listings carrying this category.
     #[serde(default)]
     pub category: Option<String>,
 }
@@ -435,7 +435,7 @@ pub async fn list_listings(
     )
     .await?;
     // The context is transaction-local (`set_config(..., true)`) and each
-    // pooled statement runs in its OWN implicit transaction — the context-set
+    // pooled statement runs in its OWN implicit transaction - the context-set
     // and the SELECT must share ONE explicit transaction or FORCE RLS hides
     // every row ( rule 2; e2e: `store list` returned [] and
     // `store get` 404ed right after a successful create).
@@ -459,9 +459,9 @@ pub async fn list_listings(
     Ok(Json(rows.iter().map(row_to_listing).collect()))
 }
 
-/// `GET /v1/app/store/listings/{id}` — listing detail.
+/// `GET /v1/app/store/listings/{id}` - listing detail.
 ///
-/// Epic 15.5.5: visibility is enforced by RLS — if the row is not visible
+/// Epic 15.5.5: visibility is enforced by RLS - if the row is not visible
 /// to the caller, the SELECT returns zero rows and we 404. No manual
 /// visibility check in the service layer.
 #[utoipa::path(
@@ -509,7 +509,7 @@ pub async fn get_listing(
     Ok(Json(row_to_listing(&row)))
 }
 
-/// Story — `PUT /v1/app/store/listings/{id}` — update a listing (catalog admin).
+/// Story - `PUT /v1/app/store/listings/{id}` - update a listing (catalog admin).
 /// Request to update a store listing (all fields optional).
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateListingRequest {
@@ -568,7 +568,7 @@ where
     Option::<T>::deserialize(deserializer)
 }
 
-/// `PUT /v1/app/store/listings/{id}` — update a listing (catalog admin).
+/// `PUT /v1/app/store/listings/{id}` - update a listing (catalog admin).
 #[utoipa::path(
     put,
     operation_id = "store.update",
@@ -726,9 +726,9 @@ pub async fn update_listing(
     Ok(Json(listing))
 }
 
-/// Story — `DELETE /v1/app/store/listings/{id}` — archive a listing (soft delete).
+/// Story - `DELETE /v1/app/store/listings/{id}` - archive a listing (soft delete).
 /// Sets `status = 'archived'` so the listing is hidden from the public store but retained for audit.
-/// `DELETE /v1/app/store/listings/{id}` — archive a listing (soft delete).
+/// `DELETE /v1/app/store/listings/{id}` - archive a listing (soft delete).
 #[utoipa::path(
     delete,
     operation_id = "store.archive",
@@ -835,7 +835,7 @@ pub struct SetupResponse {
     pub status: String,
 }
 
-/// `POST /v1/app/setup` — create an app instance (atomic).
+/// `POST /v1/app/setup` - create an app instance (atomic).
 #[utoipa::path(
     post,
     operation_id = "setup.create",
@@ -863,12 +863,12 @@ pub async fn setup_instance(
     )
     .await?;
     // Fix A/D : target_env_id is REQUIRED and the caller must hold
-    // RBAC membership in it. org_id is resolved from env_id — env_id is the
+    // RBAC membership in it. org_id is resolved from env_id - env_id is the
     // sole tenant key.
     let env_id = resolve_target_env(&state.pool, &a, &q).await?;
     // Same-connection tenant context : the sys_environments_select /
     // sys_organizations_select RLS policies gate on
-    // `sentin8_context_initialized` — resolve org/slug/domain on ONE
+    // `sentin8_context_initialized` - resolve org/slug/domain on ONE
     // connection with the target env's context set.
     let cfg = sentin8::config::Sentin8Config::from_env();
     let (org_id, _org_slug, org_domain, env_slug) = {
@@ -902,10 +902,10 @@ pub async fn setup_instance(
     };
     // Fetch listing for app_slug + backend_url. The requested channel
     // (APP-4) resolves the NEWEST published version for the listing's slug
-    // on that channel — a slug alone no longer identifies a release row.
+    // on that channel - a slug alone no longer identifies a release row.
     // Same-connection tenant context (app DESIGN §5 cross-cutting):
     // `store_listings` is visibility-scoped RLS and the SELECT policy
-    // gates on `sentin8_context_initialized()` — a bare-pool read
+    // gates on `sentin8_context_initialized()` - a bare-pool read
     // (no context) hides every row and `fetch_one` fails the install
     // with a zero-rows 500. The context is transaction-local, so the
     // context-set and the SELECT share ONE explicit transaction; the
@@ -957,7 +957,7 @@ pub async fn setup_instance(
         .filter(|d| !d.is_empty())
         .map(|d| d.split('.').next().unwrap_or(d).to_string());
     // Resolve the instance's primary hostname + bff hostname. When a custom
-    // subdomain is supplied, ONLY the custom-domain mappings are created —
+    // subdomain is supplied, ONLY the custom-domain mappings are created -
     // the default {app_slug}.{env_slug}.{org_domain} mappings are NOT, so we
     // never produce stray ebank.prod.ibank.local / bff.ebank.prod.ibank.local
     // hosts that would never be opened. When no custom subdomain is given,
@@ -1005,13 +1005,13 @@ pub async fn setup_instance(
         .bind(if auth_domain.is_empty() { None } else { Some(&auth_domain) })
         .bind(req.allow_signup)
  // Declarative F-A gate mode (BFF design ). Listings don't declare
- // a gate mode yet — every installed app defaults to 'strict'
+ // a gate mode yet - every installed app defaults to 'strict'
  // (fail-closed membership requirement). The platform Dash sets
  // 'self_service' in its seed (its self-service users create their
  // first org before any group membership can exist).
         .bind("strict")
         .fetch_one(&mut *tx).await.map_err(err_db)?;
-        // Commit the instance row BEFORE the provisioning steps — the
+        // Commit the instance row BEFORE the provisioning steps - the
         // block-scoped tx would otherwise be dropped and rolled back, so
         // the install returns success but no instance ever exists (the
         // next runtime_context lookup 404s; nothing recovers from the
@@ -1022,9 +1022,9 @@ pub async fn setup_instance(
     let instance_id: Uuid = row.get("id");
     // The app instance's hostname and sentin8_bff_hostname are already
     // stored in sentin8_sys_app_instances. The proxy's DomainResolver
-    // reads these directly — no need to write to sentin8_domains.
+    // reads these directly - no need to write to sentin8_domains.
 
-    // Story / scope flow — read the listing's required scopes
+    // Story / scope flow - read the listing's required scopes
     // (`oauth_defaults.scopes`, declared at app registration) and persist them
     // as the instance's `allowed_scopes` / `allowed_services`. BFF requests
     // these at login so the issued access token carries the app's scopes.
@@ -1032,7 +1032,7 @@ pub async fn setup_instance(
     // Also fetch the listing's `roles` field so we can provision them in
     // `sentin8_auth_roles` for this org/env below.
     // Same-connection tenant context: same rationale as the listing
-    // fetch above — a bare-pool read hides the listing row under FORCE
+    // fetch above - a bare-pool read hides the listing row under FORCE
     // RLS and silently drops oauth_defaults (no scopes, no DCR consent,
     // no roles) even though the install "succeeds".
     let listing_row = {
@@ -1062,7 +1062,7 @@ pub async fn setup_instance(
             })
         })
         .unwrap_or_default();
-    // Story — extract consent_required from oauth_defaults .
+    // Story - extract consent_required from oauth_defaults .
     // First-party apps (consent_required = false) skip the consent screen.
     let consent_required: bool = listing_row
         .as_ref()
@@ -1099,11 +1099,11 @@ pub async fn setup_instance(
             tx.commit().await.map_err(err_db)?;
         }
         tracing::info!(instance_id = %instance_id, ?scopes, ?services, "app: set instance allowed_scopes from listing");
-        // Story — stat integration. When the listing declares
+        // Story - stat integration. When the listing declares
         // `oauth_defaults.integrations.stat = true`, create the instance's Stat
         // property and store the property id on the instance row. Non-fatal:
         // install succeeds without analytics (the flag is re-provisioned on
-        // the next install retry; App never writes Stat tables directly — the
+        // the next install retry; App never writes Stat tables directly - the
         // ingest path is the shared `POST /v1/m/metric` pipeline).
         let stat_declared = listing_row
             .as_ref()
@@ -1115,7 +1115,7 @@ pub async fn setup_instance(
             })
             .unwrap_or(false);
         if stat_declared {
-            // the `app` workload certificate IS the identity —
+            // the `app` workload certificate IS the identity -
             // build the cert-presenting transport for the Stat admin call
             // (non-fatal on failure, same as the rest of this block).
             let admin_http = match crate::telemetry::stat_admin_transport(&state, &a).await {
@@ -1160,13 +1160,13 @@ pub async fn setup_instance(
             }
         }
 
-        // Story — register an OAuth client with Auth via DCR using
+        // Story - register an OAuth client with Auth via DCR using
         // the installer's tenant context. The redirect_uri is the BFF
         // callback for this instance.
         //
         // BFF-6 (app DESIGN §10): when the listing declares an
         // `oauth_defaults.redirect_uris` allow-list, the derived callback MUST
-        // match one of its entries exactly — the listing author decides where
+        // match one of its entries exactly - the listing author decides where
         // post-login redirects may land; a mismatch FAILS the install (the
         // developer fixes the listing or installs a variant whose host matches)
         // rather than silently registering an off-list callback. Without the
@@ -1240,12 +1240,12 @@ pub async fn setup_instance(
             }
         }
 
-        // Staff-mode CIBA client (BFF design — the CIBA backchannel client at
+        // Staff-mode CIBA client (BFF design - the CIBA backchannel client at
         // the CUSTOMER env's auth). The sign-in client above was registered at
         // the staff auth (auth_domain); CIBA bc-authorize targets the CUSTOMER
         // env's auth (where the customer accounts live), so the SAME instance
         // client must exist there too. Public PKCE, same redirect callback.
-        // Non-fatal: CIBA flows fail with a clear error until this lands — the
+        // Non-fatal: CIBA flows fail with a clear error until this lands - the
         // flag is re-provisioned on the next install retry.
         if !auth_domain.is_empty() {
             let customer_auth_url = resolve_env_sentin8_auth_url(&state, org_id, env_id).await;
@@ -1281,8 +1281,8 @@ pub async fn setup_instance(
         }
     }
 
-    // Story — provision the instance group + role in Auth.
-    // Creates ( — names embed the instance UUID; the display-name
+    // Story - provision the instance group + role in Auth.
+    // Creates ( - names embed the instance UUID; the display-name
     // snake_case form is retired, AUTH-3):
     // 1. sentin8_auth_role: sentin8:app:{instance_id}:role (permissions = listing's oauth_defaults.scopes)
     // 2. sentin8_auth_group: sentin8:app:{instance_id}
@@ -1306,12 +1306,12 @@ pub async fn setup_instance(
             // the derived auth domain.
             let cfg = sentin8::config::Sentin8Config::from_env();
             // Same-connection context: org-sibling env rows are visible under the
-            // org branch of sys_environments_select — the context env must BE the
+            // org branch of sys_environments_select - the context env must BE the
             // env whose org we scan (env_id, NOT org_id: the context functions
             // resolve org from the environment row; passing the org id as the env
             // context resolved no row and hid every sibling env, so the staff
             // auth-domain match always failed and the instance group/role were
-            // provisioned into the PROD env — where staff users hold no groups).
+            // provisioned into the PROD env - where staff users hold no groups).
             let envs: Vec<(Uuid, String, String)> = {
                 let mut conn = state.pool.begin().await.map_err(err_db)?;
                 set_tenant_context(&mut conn, env_id).await;
@@ -1349,7 +1349,7 @@ pub async fn setup_instance(
             env_id
         };
 
-        // (): no DB transaction — the auth provisioning
+        // (): no DB transaction - the auth provisioning
         // calls are HTTP; the auth tables are not app's to write.
         let provisioner = crate::auth_provision_client::AuthProvisioner::connect()
             .await
@@ -1369,7 +1369,7 @@ pub async fn setup_instance(
                 )
             })?;
 
-        // 2. Create group (idempotent) — via auth's API.
+        // 2. Create group (idempotent) - via auth's API.
         provisioner
             .group(target_env_id, &group_name)
             .await
@@ -1398,7 +1398,7 @@ pub async fn setup_instance(
                 )
             })?;
 
-        // 2. Create group (idempotent) — via auth's API.
+        // 2. Create group (idempotent) - via auth's API.
         provisioner
             .group(target_env_id, &group_name)
             .await
@@ -1409,7 +1409,7 @@ pub async fn setup_instance(
                 )
             })?;
 
-        // 3. Assign role to group (idempotent) — via auth's API.
+        // 3. Assign role to group (idempotent) - via auth's API.
         provisioner
             .group_role(target_env_id, &group_name, &role_name)
             .await
@@ -1427,7 +1427,7 @@ pub async fn setup_instance(
         );
     }
 
-    // Set status to active — and COMMIT it (same dropped-tx pitfall as the
+    // Set status to active - and COMMIT it (same dropped-tx pitfall as the
     // INSERT above: a block-scoped tx that is never committed rolls back,
     // leaving the instance stuck in 'provisioning' forever).
     {
@@ -1467,7 +1467,7 @@ pub async fn setup_instance(
     Ok(Json(AdminUiResponse::redirect("instances")))
 }
 
-/// `GET /v1/app/instances/customer-mode?env_id=…` — enumerate the
+/// `GET /v1/app/instances/customer-mode?env_id=…` - enumerate the
 /// customer-mode (`allow_signup`) instances installed in an env (auth
 /// DESIGN invariant 12: the owner-API replacement for auth's retired
 /// direct read of `sys.app_instances`).
@@ -1477,11 +1477,11 @@ pub async fn setup_instance(
 /// `sentin8:app:{instance_id}` groups a new customer should join.
 ///
 /// Authorization (fail-closed, three gates):
-/// 1. Bearer verify + M2M-only (`token_tp == "m2m"`) — this is a
+/// 1. Bearer verify + M2M-only (`token_tp == "m2m"`) - this is a
 ///    service-to-service discovery surface, never a user surface.
 /// 2. Shield gate on `sentin8:app:instances:read`.
 /// 3. Owner scoping: the caller's `service_type` claim must resolve to
-///    an instance of THIS app service's own domain — answered only for
+///    an instance of THIS app service's own domain - answered only for
 ///    envs in an org where app is enabled; the query itself stays
 ///    env-scoped so a foreign env is an indistinguishable empty result
 ///    (no tenant-existence oracle).
@@ -1520,7 +1520,7 @@ pub async fn customer_mode_instances(
     let rows = {
         let mut conn = state.pool.begin().await.map_err(err_db)?;
         // The caller's M2M workload authenticates in the SYSTEM env, but it
-        // queries ANOTHER env's instances — the RLS context must match the
+        // queries ANOTHER env's instances - the RLS context must match the
         // row's env_id (transaction-local set_config), exactly the
         // authorization layer's cross-env contract: the Shield gate above
         // already verified the caller's service scope; the context here is
@@ -1553,7 +1553,7 @@ pub async fn customer_mode_instances(
     })))
 }
 
-/// `GET /v1/app/setup/{instanceId}/status` — provisioning status.
+/// `GET /v1/app/setup/{instanceId}/status` - provisioning status.
 #[utoipa::path(
     get,
     operation_id = "setup.status",
@@ -1598,7 +1598,7 @@ pub async fn setup_status(
 
 // ── Runtime Context API ─────────────────────────────────────────────────
 
-/// Stories , , -34 — `GET /v1/app/runtime/context`.
+/// Stories , , -34 - `GET /v1/app/runtime/context`.
 ///
 /// Runtime context is resolved from the TLS-injected `X-Sentin8-App-Id` header
 /// (no per-listing API key, no hostname-based resolution). The response includes
@@ -1744,7 +1744,7 @@ pub async fn runtime_context(
     };
     let org_id: Uuid = row.get("org_id");
     let env_id: Uuid = row.get("env_id");
-    // Story — fetch merged org→env branding from sentin8_sys_branding.
+    // Story - fetch merged org→env branding from sentin8_sys_branding.
     let branding = fetch_merged_branding(&state.pool, org_id, env_id)
         .await
         .unwrap_or_default();
@@ -1763,8 +1763,8 @@ pub async fn runtime_context(
     // Fetch the env slug + org domain together so the custom domain is
     // reconstructed as {subdomain}.{env_slug}.{org_domain} (env-scoped,
     // matching setup_instance). Without the env slug we'd build
-    // www.ibank.local — wrong scope, wrong cert family.
-    // Same-connection context — RLS gates on context presence.
+    // www.ibank.local - wrong scope, wrong cert family.
+    // Same-connection context - RLS gates on context presence.
     let scope_row = {
         let mut tx = state.pool.begin().await.map_err(err_db)?;
         set_tenant_context(&mut tx, env_id).await;
@@ -1801,7 +1801,7 @@ pub async fn runtime_context(
     } else {
         sentin8_bff_hostname_val
     };
-    // Story + 12.4.12 — auth domain resolution.
+    // Story + 12.4.12 - auth domain resolution.
     // Use the auth_domain stored on the instance at install time (from the
     // auth_url dropdown selection). This is the hostname used for OIDC
     // sign-in.
@@ -1846,7 +1846,7 @@ pub async fn runtime_context(
 
 // ── Admin API (Stories -16) ───────────────────────────────────────
 
-/// `GET /v1/app/admin/instances/{id}` — instance admin detail.
+/// `GET /v1/app/admin/instances/{id}` - instance admin detail.
 #[utoipa::path(
     get,
     operation_id = "instance.get",
@@ -1910,7 +1910,7 @@ pub async fn get_instance_detail(
     })))
 }
 
-/// `PUT /v1/app/admin/instances/{id}/domain` — update custom domain (with DNS TXT validation).
+/// `PUT /v1/app/admin/instances/{id}/domain` - update custom domain (with DNS TXT validation).
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateDomainRequest {
     /// The custom domain to bind (verified via DNS TXT or CNAME).
@@ -1930,7 +1930,7 @@ pub struct UpdateDomainRequest {
     pub cname_token: Option<String>,
 }
 
-/// `PUT /v1/app/admin/instances/{id}/domain` — update custom domain (with DNS TXT validation).
+/// `PUT /v1/app/admin/instances/{id}/domain` - update custom domain (with DNS TXT validation).
 #[utoipa::path(
     put,
     operation_id = "instance.domain",
@@ -1966,12 +1966,12 @@ pub async fn update_instance_domain(
             "custom_domain must not be empty".into(),
         ));
     }
-    // Story — verify DNS TXT record if provided. APP-5: a CNAME challenge
-    // (`cname_token` + `cname_target`) is the alternate proof — the tenant
+    // Story - verify DNS TXT record if provided. APP-5: a CNAME challenge
+    // (`cname_token` + `cname_target`) is the alternate proof - the tenant
     // points `{token}.verify.{domain}` at the instance's platform hostname.
     let verified = if let (Some(token), Some(target)) = (&req.cname_token, &req.cname_target) {
         // The instance's platform hostname: the app instance row holds
-        // `hostname` — resolve it for the expected CNAME target.
+        // `hostname` - resolve it for the expected CNAME target.
         let hostname: Option<String> = {
             let mut conn = state.pool.begin().await.map_err(err_db)?;
             set_tenant_context_ext(&mut conn, &a).await;
@@ -2040,14 +2040,14 @@ pub async fn update_instance_domain(
     ))
 }
 
-/// `PUT /v1/app/admin/instances/{id}/env-vars` — update env var secret references.
+/// `PUT /v1/app/admin/instances/{id}/env-vars` - update env var secret references.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateEnvVarsRequest {
     /// Secret reference path (e.g. `sentin8-secrets://app/{id}/env`).
     pub env_vars_ref: String,
 }
 
-/// `PUT /v1/app/admin/instances/{id}/env-vars` — update env var secret references.
+/// `PUT /v1/app/admin/instances/{id}/env-vars` - update env var secret references.
 #[utoipa::path(
     put,
     operation_id = "instance.env-vars",
@@ -2114,7 +2114,7 @@ pub async fn update_instance_env_vars(
     ))
 }
 
-/// `GET /v1/app/admin/instances/{id}/env-vars/resolve` — resolve the
+/// `GET /v1/app/admin/instances/{id}/env-vars/resolve` - resolve the
 /// instance's stored env-vars secret reference through the shared
 /// `sentin8-secrets` resolver chain ( story 34.2.5). Returns the
 /// resolved value once; never logged. Requires the instances:admin scope.
@@ -2200,7 +2200,7 @@ pub async fn resolve_instance_env_vars(
     ))
 }
 
-/// `PUT /v1/app/admin/instances/{id}/feature-flags` — update feature flags.
+/// `PUT /v1/app/admin/instances/{id}/feature-flags` - update feature flags.
 /// Request to update an instance's feature flags.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateFeatureFlagsRequest {
@@ -2208,7 +2208,7 @@ pub struct UpdateFeatureFlagsRequest {
     pub feature_flags: serde_json::Value,
 }
 
-/// `PUT /v1/app/admin/instances/{id}/feature-flags` — update feature flags.
+/// `PUT /v1/app/admin/instances/{id}/feature-flags` - update feature flags.
 #[utoipa::path(
     put,
     operation_id = "instance.feature-flags",
@@ -2275,7 +2275,7 @@ pub async fn update_instance_feature_flags(
     ))
 }
 
-/// `PUT /v1/app/admin/instances/{id}/status` — update instance status (active/maintenance/offline).
+/// `PUT /v1/app/admin/instances/{id}/status` - update instance status (active/maintenance/offline).
 /// Request to update an instance's lifecycle status.
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateStatusRequest {
@@ -2283,7 +2283,7 @@ pub struct UpdateStatusRequest {
     pub status: String,
 }
 
-/// `PUT /v1/app/admin/instances/{id}/status` — update instance status.
+/// `PUT /v1/app/admin/instances/{id}/status` - update instance status.
 #[utoipa::path(
     put,
     operation_id = "instance.status",
@@ -2356,7 +2356,7 @@ pub async fn update_instance_status(
     Ok(Json(serde_json::json!({ "id": id, "status": req.status })))
 }
 
-/// `GET /v1/app/admin/instances/{id}/oauth-client` — get OAuth client (DCR summary).
+/// `GET /v1/app/admin/instances/{id}/oauth-client` - get OAuth client (DCR summary).
 #[utoipa::path(
     get,
     operation_id = "instance.oauth",
@@ -2408,7 +2408,7 @@ pub async fn get_instance_oauth_client(
 
 // ── Flow internal endpoint (Story) ──────────────────────────────
 
-/// `POST /v1/internal/steps/execute` — App step handler called by Flow (proxy-back).
+/// `POST /v1/internal/steps/execute` - App step handler called by Flow (proxy-back).
 #[utoipa::path(
     post,
     path = "/v1/internal/steps/execute",
@@ -2428,7 +2428,7 @@ pub async fn execute_internal_step(
 
 // ── Health ───────────────────────────────────────────────────────────────
 
-/// `GET /v1/health` — liveness probe.
+/// `GET /v1/health` - liveness probe.
 #[utoipa::path(
     get,
     path = "/v1/health",
@@ -2489,7 +2489,7 @@ pub(crate) async fn emit_admin_event(
 }
 
 /// Append an event to the LOCAL outbox (`app.outbox`) for the DBX relay
-/// ( — the shared-inbox table is retired).
+/// ( - the shared-inbox table is retired).
 ///
 /// The insert rides the CALLER's transaction (unqualified `outbox` resolves
 /// to `app.outbox` via the service role's `search_path=app, public`) so the
@@ -2517,7 +2517,7 @@ async fn emit_event_tx(
         })
 }
 
-/// Write an audit event to `audit_events` (.3). Best-effort — a
+/// Write an audit event to `audit_events` (.3). Best-effort - a
 /// failed audit write is logged but never fails the request.
 async fn write_audit(
     pool: &sqlx::PgPool,
@@ -2729,7 +2729,7 @@ fn detect_include_cycles(roles: &[ListingRole]) -> Result<(), (StatusCode, Strin
                                 format!("include cycle detected: '{}' -> '{}'", node, child),
                             ))
                         }
-                        2 => { /* already fully explored — no cycle through here */ }
+                        2 => { /* already fully explored - no cycle through here */ }
                         _ => {}
                     }
                 }
@@ -2740,7 +2740,7 @@ fn detect_include_cycles(roles: &[ListingRole]) -> Result<(), (StatusCode, Strin
 }
 
 /// Resolve a role's effective permission set by walking its
-/// `includes` graph (no cycles — the caller has already validated).
+/// `includes` graph (no cycles - the caller has already validated).
 /// Returns a deduped, order-preserving union of the role's own
 /// scopes plus all transitively included roles' scopes.
 #[allow(dead_code)]
@@ -2771,14 +2771,14 @@ fn err_db(e: sqlx::Error) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
 }
 
-/// Story — Resolve the env-scoped Auth URL for DCR registration.
+/// Story - Resolve the env-scoped Auth URL for DCR registration.
 ///
 /// Queries the env's auth_domain from the DB (App has direct DB access).
 /// Falls back to the platform auth issuer if not set.
 async fn resolve_env_sentin8_auth_url(state: &AppState, org_id: Uuid, env_id: Uuid) -> String {
     // Build the env-scoped auth domain from the env's auth_domain subdomain
     // + org domain, same as Sys's get_env_auth_domain endpoint.
-    // Same-connection context — RLS gates on context presence; a
+    // Same-connection context - RLS gates on context presence; a
     // bare-pool read hides the row and silently falls back to the platform
     // auth issuer.
     let row = async {
@@ -2827,7 +2827,7 @@ async fn resolve_env_sentin8_auth_url(state: &AppState, org_id: Uuid, env_id: Uu
 /// Upper bound the setup-time DCR retry window. A brand-new env's Auth
 /// identity (proxy SNI mapping + Acme cert for `auth.{env}.{org}`)
 /// becomes routable seconds after the install lands; the observed worst
-/// case is ~42 s — ~60 s covers it with headroom.
+/// case is ~42 s - ~60 s covers it with headroom.
 const SIGNIN_CLIENT_RETRY_WINDOW_SECS: u64 = 60;
 /// Base seconds for the exponential backoff between DCR attempts.
 const SIGNIN_CLIENT_RETRY_BASE_SECS: u64 = 3;
@@ -2836,13 +2836,13 @@ const SIGNIN_CLIENT_RETRY_BASE_SECS: u64 = 3;
 ///
 /// The install (`POST /v1/app/setup`) can fire while the env-scoped Auth
 /// for a brand-new env is not yet routable (proxy `no mapping for SNI`,
-/// Acme cert mid-issuance) — the first DCR attempt fails and the
+/// Acme cert mid-issuance) - the first DCR attempt fails and the
 /// triggering request is the ONLY chance to provision: no event re-fires
 /// for the same env. The swallow-and-continue form left the instance
 /// `active` with an empty `oauth_client_id`, and every sign-up through
 /// the BFF then 500'd (fallback `dash` client is not active in the
 /// tenant env → PAR 401). Retry with exponential backoff until the
-/// window elapses; a persistent failure FAILS the install (fail-closed —
+/// window elapses; a persistent failure FAILS the install (fail-closed -
 /// an instance that cannot authenticate its users must not be served).
 async fn register_signin_client_with_retry(
     _state: &AppState,
@@ -2876,7 +2876,7 @@ async fn register_signin_client_with_retry(
                 }
                 let backoff = SIGNIN_CLIENT_RETRY_BASE_SECS
                     .saturating_mul(1u64 << attempt.saturating_sub(1).min(4));
-                tracing::warn!(instance_id = %instance_id, attempt, backoff_s = backoff, error = %e, "app: DCR failed — retrying with backoff");
+                tracing::warn!(instance_id = %instance_id, attempt, backoff_s = backoff, error = %e, "app: DCR failed - retrying with backoff");
                 tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
             }
         }
@@ -2899,7 +2899,7 @@ struct MergedBranding {
 }
 
 /// Fetch merged org→env branding from `sys.branding` (Story).
-/// Same-connection tenant context — the branding table's RLS gates
+/// Same-connection tenant context - the branding table's RLS gates
 /// on `sentin8_context_initialized`; both reads run on ONE connection
 /// with the env context set.
 async fn fetch_merged_branding(
@@ -2975,7 +2975,7 @@ async fn _derive_sentin8_tls_mappings(
         .map_err(|e| format!("failed to build http client: {e}"))?;
 
     // Fetch org + env slugs and the org's domain.
-    // Same-connection transaction ( rule 2) — RLS gates on context
+    // Same-connection transaction ( rule 2) - RLS gates on context
     // presence and the context is transaction-local.
     let org_row = {
         let mut tx = state
@@ -3029,9 +3029,9 @@ async fn _derive_sentin8_tls_mappings(
         Err(e) => tracing::error!(error = %e, "sys derive mappings request failed"),
     }
 
-    // Upsert the app hostname mapping (service=web — the single-instance
+    // Upsert the app hostname mapping (service=web - the single-instance
     // static file server that serves all app-store apps). No backend_url
-    // is set — proxy routes to the web instance via the Valkey registry
+    // is set - proxy routes to the web instance via the Valkey registry
     // (Active instance of the "web" service type), same as any platform
     // service. The app slug is encoded in the hostname's first label, so
     // web resolves which app to serve from the X-Sentin8-Hostname header.
@@ -3091,7 +3091,7 @@ async fn _derive_sentin8_tls_mappings(
 #[cfg(test)]
 mod tests {
 
-    /// Install the Graviola PQ crypto provider once — reqwest panics with
+    /// Install the Graviola PQ crypto provider once - reqwest panics with
     /// "No provider set" when a client is built without one.
     fn install_provider() {
         use std::sync::Once;

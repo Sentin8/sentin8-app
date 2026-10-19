@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Library surface for Sentin8:App — tests import service internals through
+//! Library surface for Sentin8:App - tests import service internals through
 //! this crate name, mirroring the post/cron pattern.
 
 #![deny(missing_docs)]
@@ -20,11 +20,11 @@ pub mod config;
 pub mod dcr;
 /// Domain binding + DNS TXT verification for custom domains.
 pub mod domains;
-/// HTTP handlers — store listings, setup, runtime context, admin.
+/// HTTP handlers - store listings, setup, runtime context, admin.
 pub mod handlers;
 /// OpenAPI spec assembly.
 pub mod openapi;
-/// Shield (Sentin8:Policy) integration — shared bridge re-exports.
+/// Shield (Sentin8:Policy) integration - shared bridge re-exports.
 pub mod policy;
 /// Service self-registration declarations.
 pub mod registration;

@@ -10,7 +10,7 @@ use axum::routing::{get, post, put};
 use std::sync::Arc;
 
 /// Build the service state (config, pool, clients, workers). Runs inside
-/// the shell's `with_state` closure — the pool arrives already created and
+/// the shell's `with_state` closure - the pool arrives already created and
 /// PG18-checked; service-specific setup (Valkey data plane, DCR bus client,
 /// engines, relays) happens here exactly as the pre-shell serve did.
 pub async fn build_state(
@@ -18,7 +18,7 @@ pub async fn build_state(
 ) -> anyhow::Result<crate::handlers::AppState> {
     let config = crate::config::AppConfig::from_env();
     // auth DESIGN §4.3f: the `app` workload CERTIFICATE is
-    // the identity — mint retries while Acme comes up (boot window); the
+    // the identity - mint retries while Acme comes up (boot window); the
     // consumers' reconnect loops cover a late identity.
     let bus_client = loop {
         match sentin8::bus::client::BusClient::for_workload(
@@ -36,9 +36,9 @@ pub async fn build_state(
         }
     };
 
-    // ── Sentin8:Policy (— shell-owned boot): the shell's
+    // ── Sentin8:Policy (- shell-owned boot): the shell's
     // boot step 8 already booted the engine (load + shared deps + hot-reload
-    // + stat emitter). Services only CONSUME it — no second engine.
+    // + stat emitter). Services only CONSUME it - no second engine.
     let policy_engine = core.admin.policy.clone();
 
     let state = crate::handlers::AppState {
@@ -54,7 +54,7 @@ pub async fn build_state(
         },
     };
 
-    // Story — background consumer of Bus `stat-pipeline` events that
+    // Story - background consumer of Bus `stat-pipeline` events that
     // surfaces app-usage metrics on store listings. Resilient: connection
     // failures are retried inside `run` with a 2s backoff. The stat ingest
     // (APP-1) reuses the daily-telemetry M2M identity (scope
@@ -67,7 +67,7 @@ pub async fn build_state(
     {
         Ok(t) => Some(t),
         Err(e) => {
-            tracing::warn!(error = %e, "app: stat token source unavailable — listing metrics ingest disabled");
+            tracing::warn!(error = %e, "app: stat token source unavailable - listing metrics ingest disabled");
             None
         }
     };
@@ -76,7 +76,7 @@ pub async fn build_state(
         listener.run().await;
     });
 
-    // Story — daily telemetry via Stat. Fired at startup, then on a
+    // Story - daily telemetry via Stat. Fired at startup, then on a
     // 24h loop. Failures are logged and never abort the service.
     let pool = core.pool.clone();
     let stat_cfg = config.clone();
@@ -99,7 +99,7 @@ pub async fn build_state(
         }
     });
 
-    // Story — register App's step-handler profile with Sentin8:Flow
+    // Story - register App's step-handler profile with Sentin8:Flow
     // (domain = "app") so Flow can proxy-back for KYC/Approval/Document
     // steps during onboarding workflows. Best-effort: Flow may not be
     // reachable at boot; retried on the next restart.
@@ -127,7 +127,7 @@ pub async fn build_state(
 /// Add this service's routes onto the shell-provided router. The shell
 /// owns the boot sequence, state binding, OpenAPI merge and the standard
 /// middleware stack; this adds ONLY routes (including the service's own
-/// `/v1/health` — custom payload).
+/// `/v1/health` - custom payload).
 pub fn routes(
     router: axum::Router<crate::handlers::AppState>,
 ) -> axum::Router<crate::handlers::AppState> {
@@ -156,13 +156,13 @@ pub fn routes(
         .route("/v1/app/setup/{id}/status", get(handlers::setup_status))
         // Customer-mode instance discovery (auth DESIGN invariant 12): auth's
         // sign-up closure provisioning enumerates the env's customer-mode
-        // instances via this OWNER API — it never touches `sys.app_instances`
+        // instances via this OWNER API - it never touches `sys.app_instances`
         // (auth's sys.* grants are retired; DBX §6.6a).
         .route(
             "/v1/app/instances/customer-mode",
             get(handlers::customer_mode_instances),
         )
-        // Runtime context (Stories , , , -34 — header-based, no auth)
+        // Runtime context (Stories , , , -34 - header-based, no auth)
         .route("/v1/app/runtime/context", get(handlers::runtime_context))
         // Admin API (Stories -16)
         .route(
@@ -198,7 +198,7 @@ pub fn routes(
             "/v1/internal/steps/execute",
             post(handlers::execute_internal_step),
         )
-        // ── Sentin8:Policy admin API ( — shared implementation,
+        // ── Sentin8:Policy admin API ( - shared implementation,
         // one surface per service; handlers are generic over this AppState).
         .route(
             "/v1/admin/policy-sets",
@@ -244,7 +244,7 @@ pub fn routes(
         )
 }
 
-/// Shared policy-admin surface accessor — the shared
+/// Shared policy-admin surface accessor - the shared
 /// handlers extract this service's admin state via [`HasPolicyAdmin`].
 impl sentin8::shield::admin::HasPolicyAdmin for crate::handlers::AppState {
     fn policy_admin(&self) -> &sentin8::shield::admin::SharedAdminState {

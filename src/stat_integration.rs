@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Stories -27 — Stat integration for App app instances.
+//! Stories -27 - Stat integration for App app instances.
 //!
 //! When provisioning an app instance, App:
 //! 1. Creates a Stat property via `POST /v1/admin/properties`
@@ -61,7 +61,7 @@ pub enum StatIntegrationError {
 /// across app instances within the same org/env.
 /// Create the instance's Stat property. auth DESIGN §4.3f:
 /// `http` is the cert-presenting transport (the `app` workload
-/// certificate IS the identity — presented on the TLS handshake; Stat's
+/// certificate IS the identity - presented on the TLS handshake; Stat's
 /// TLS layer authenticates it). No bearer token exists on this path.
 ///
 /// # Errors
@@ -185,7 +185,7 @@ struct DcrResponse {
 #[cfg(test)]
 mod tests {
 
-    /// Install the Graviola PQ crypto provider once — reqwest panics with
+    /// Install the Graviola PQ crypto provider once - reqwest panics with
     /// "No provider set" when a client is built without one.
     fn install_provider() {
         use std::sync::Once;

@@ -5,7 +5,7 @@
 
 //! # app-contracts
 //!
-//! Rust types for the App App-Store and runtime API — store listings,
+//! Rust types for the App App-Store and runtime API - store listings,
 //! visibility controls, and the runtime context handed to app instances.
 
 #![deny(missing_docs)]
@@ -51,7 +51,7 @@ impl AppVisibility {
     }
 }
 
-/// One App Store listing — a published app in the store.
+/// One App Store listing - a published app in the store.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AppStoreListing {
     /// Listing identity.
@@ -68,7 +68,7 @@ pub struct AppStoreListing {
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
-/// The runtime context of an app instance — the tenant identity and
+/// The runtime context of an app instance - the tenant identity and
 /// derived domains the app runtime needs.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AppRuntimeContext {
@@ -84,7 +84,7 @@ pub struct AppRuntimeContext {
     pub hostname: String,
     /// The org's Auth (staff) domain.
     pub sentin8_auth_domain: String,
-    /// The app BFF hostname — always `bff.{app_domain}`.
+    /// The app BFF hostname - always `bff.{app_domain}`.
     pub sentin8_bff_domain: String,
     /// Instance lifecycle status.
     pub status: String,
@@ -145,7 +145,7 @@ mod tests {
     #[test]
     fn app_runtime_context_defaults_when_absent() {
         // instance_name/instance_description/organization_name are
-        // #[serde(default)] — older producers that omit them still parse.
+        // #[serde(default)] - older producers that omit them still parse.
         let ctx: AppRuntimeContext = serde_json::from_value(json!({
             "org_id": uuid::Uuid::new_v4(),
             "env_id": uuid::Uuid::new_v4(),

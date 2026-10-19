@@ -3,14 +3,14 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Story — Flow integration for App onboarding workflows.
+//! Story - Flow integration for App onboarding workflows.
 //!
 //! App implements `POST /v1/internal/steps/execute` for App-specific step
 //! types used in onboarding workflows:
-//! - `KYCCheckStep` — calls a KYC provider (stub).
-//! - `ApprovalReviewStep` — pauses for human approval (delegates to Flow
+//! - `KYCCheckStep` - calls a KYC provider (stub).
+//! - `ApprovalReviewStep` - pauses for human approval (delegates to Flow
 //! `ManualDecisionStep`).
-//! - `DocumentUploadStep` — validates a document and stores it in Storage (stub).
+//! - `DocumentUploadStep` - validates a document and stores it in Storage (stub).
 //!
 //! App registers its step handler profile with Flow via
 //! `POST /v1/handlers/register` (domain=`app`).
@@ -79,7 +79,7 @@ pub fn execute_step(req: &StepExecuteRequest) -> Result<StepExecuteResponse, Str
     }
 }
 
-/// `KYCCheckStep` — calls a KYC provider (stub).
+/// `KYCCheckStep` - calls a KYC provider (stub).
 ///
 /// In production this calls an external KYC provider API. The stub returns a
 /// `pass` result with the input echoed back, so workflows can be tested
@@ -102,7 +102,7 @@ fn execute_kyc_check(req: &StepExecuteRequest) -> Result<StepExecuteResponse, St
     })
 }
 
-/// `ApprovalReviewStep` — pauses for human approval.
+/// `ApprovalReviewStep` - pauses for human approval.
 ///
 /// Delegates to Flow's `ManualDecisionStep`: App returns `status = "paused"`
 /// and Flow waits for a human decision (approve/reject) via
@@ -124,7 +124,7 @@ fn execute_approval_review(req: &StepExecuteRequest) -> Result<StepExecuteRespon
     })
 }
 
-/// `DocumentUploadStep` — validate document, store in Storage (stub).
+/// `DocumentUploadStep` - validate document, store in Storage (stub).
 ///
 /// In production this validates the uploaded document (type, size, signature)
 /// and stores it in Storage. The stub returns a fake Storage object ID.
@@ -172,7 +172,7 @@ pub fn handler_profile_payload(callback_base_url: &str, callback_token: &str) ->
 #[cfg(test)]
 mod tests {
 
-    /// Install the Graviola PQ crypto provider once — reqwest panics with
+    /// Install the Graviola PQ crypto provider once - reqwest panics with
     /// "No provider set" when a client is built without one.
     fn install_provider() {
         use std::sync::Once;

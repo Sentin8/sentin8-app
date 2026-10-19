@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! App integration tests — integration tests.
+//! App integration tests - integration tests.
 //!
 //! Follows the runtime-skip pattern (testing-strategy ): pure
 //! unit-style assertions run always; DB-backed tests connect at the bottom
@@ -20,7 +20,7 @@
 use serde_json::json;
 use sqlx::Row;
 
-/// Install the Graviola PQ crypto provider once — reqwest panics with
+/// Install the Graviola PQ crypto provider once - reqwest panics with
 /// "No provider set" when a client is built without one.
 fn install_provider() {
     use std::sync::Once;
@@ -41,7 +41,7 @@ fn create_listing_request_defaults_visibility_to_public() {
     });
     let parsed: serde_json::Value = serde_json::from_value(req).unwrap();
     // visibility omitted → the handler defaults to "public" (VISIBILITIES
-    // accepts usr/env/public; "org" was dropped — ).
+    // accepts usr/env/public; "org" was dropped - ).
     assert!(parsed.get("visibility").is_none());
 }
 
@@ -85,7 +85,7 @@ fn listing_roles_shape_roundtrip() {
 fn runtime_context_response_shape() {
     install_provider();
     // The runtime context is a bare JSON object with snake_case keys
-    // ( — no success/data envelope). Verify the contract fields.
+    // ( - no success/data envelope). Verify the contract fields.
     let ctx = json!({
         "org_id": "00000000-0000-0000-0000-000000000001",
         "env_id": "00000000-0000-0000-0000-000000000002",
@@ -152,7 +152,7 @@ async fn db_pool() -> Option<sqlx::PgPool> {
     match sqlx::postgres::PgPool::connect(&url).await {
         Ok(p) => Some(p),
         Err(e) => {
-            eprintln!("skipping DB-backed app tests — PostgreSQL unreachable: {e}");
+            eprintln!("skipping DB-backed app tests - PostgreSQL unreachable: {e}");
             None
         }
     }
@@ -300,7 +300,7 @@ async fn db_app_instances_lookup_respects_policy() {
     let env_b = uuid::Uuid::new_v4();
     let env_other_org = uuid::Uuid::new_v4();
     let org_other = uuid::Uuid::new_v4();
-    // Org/env lifecycle is Sentin8:Sys's domain — the fixture connects as
+    // Org/env lifecycle is Sentin8:Sys's domain - the fixture connects as
     // sentin8_sys_service for the setup writes (App's role is read-only on
     // orgs/envs), then reuses the app-service pool for the assertions.
     let sys_url = std::env::var("SENTIN8_SYS_DB_DSN")
@@ -308,7 +308,7 @@ async fn db_app_instances_lookup_respects_policy() {
     let sys_pool = match sqlx::postgres::PgPool::connect(&sys_url).await {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("skipping DB-backed app tests — sys role unreachable: {e}");
+            eprintln!("skipping DB-backed app tests - sys role unreachable: {e}");
             return;
         }
     };
@@ -354,7 +354,7 @@ async fn db_app_instances_lookup_respects_policy() {
     tx.commit().await.unwrap();
     drop(sys_pool);
 
-    // Instance in env_a of org_id (App's own table — its role may INSERT).
+    // Instance in env_a of org_id (App's own table - its role may INSERT).
     let mut tx = pool.begin().await.unwrap();
     sqlx::query("SELECT sentin8_set_tenant_context($1)")
         .bind(env_a)
@@ -438,7 +438,7 @@ async fn db_app_instances_lookup_respects_policy() {
 /// Transactional local-outbox emission (, DBX ): a committed domain
 /// write with an in-transaction `app.outbox` INSERT leaves exactly one
 /// outbox row; a rolled-back transaction leaves none. (Bus.inbox is
-/// bus-internal — producers never touch it; the relay pushes via the
+/// bus-internal - producers never touch it; the relay pushes via the
 /// produce API.)
 #[tokio::test]
 async fn db_outbox_emission_is_transactional() {
@@ -592,7 +592,7 @@ async fn db_instances_hostname_columns_roundtrip() {
     let sys_pool = match sqlx::postgres::PgPool::connect(&sys_url).await {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("skipping DB-backed app tests — sys role unreachable: {e}");
+            eprintln!("skipping DB-backed app tests - sys role unreachable: {e}");
             return;
         }
     };

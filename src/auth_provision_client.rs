@@ -7,12 +7,12 @@
 //!
 //! App's instance-setup step calls **auth's membership provisioning API**
 //! (`POST /v1/admin/provision/*`) instead of INSERTing `auth.*` tables
-//! directly — cross-service table access is prohibited: the owner
+//! directly - cross-service table access is prohibited: the owner
 //! exposes the verbs, app holds a token (`sentin8:auth:admin:write` on the
 //! `sentin8:app` workload). Copy of sys's `auth_provision.rs` (peers
-//! cannot share a crate — dependency direction is one-way).
+//! cannot share a crate - dependency direction is one-way).
 
-/// Auth provisioning API client — **certificate-presenting** (,
+/// Auth provisioning API client - **certificate-presenting** (,
 /// auth DESIGN §4.3f): the `sentin8:app` CERTIFICATE is the identity,
 /// presented on the TLS handshake of every call; Auth's TLS layer
 /// authenticates it. No bearer token exists on this path.
@@ -54,7 +54,7 @@ impl AuthProvisioner {
             .http
             .post(&url)
             // Auth's provisioning API resolves the target env from the
-            // `x-sentin8-target-env-id` header (auth DESIGN — auth is
+            // `x-sentin8-target-env-id` header (auth DESIGN - auth is
             // env-scoped); the body's env_id only feeds the SQL bind.
             // Mirror sys's provisioner: send the header on every call.
             .header("x-sentin8-target-env-id", env_id.to_string())

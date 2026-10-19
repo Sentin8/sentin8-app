@@ -32,7 +32,7 @@ pub struct AppConfig {
     pub sentin8_stat_url: String,
     /// Stat property id App reports against.
     pub sentin8_stat_property_id: uuid::Uuid,
-    /// Shared Auth client — constructed once so the discovery and JWKS
+    /// Shared Auth client - constructed once so the discovery and JWKS
     /// caches are reused across every request (5-minute TTL each).
     /// Cloning is cheap (the caches live behind an `Arc`).
     pub auth_client: AuthClient,

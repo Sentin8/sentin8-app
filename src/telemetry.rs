@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! App daily telemetry emission — Story
+//! App daily telemetry emission - Story
 //!
 //! Metrics: instances.count, listings.count, installs.daily.
 //! Dimension tags: `env_id`. Wired to a Cron daily schedule.
@@ -19,11 +19,11 @@ use crate::config::AppConfig;
 /// as `sentin8::bus::client::build_with_dcr` and `tls/src/traffic.rs`.
 /// Build the shared stat M2M token source + base URL for the App stat
 /// integration (APP-1: the listener's listing-metrics ingest). The
-/// `app` M2M workload already carries `sentin8:stat:measure` — the same
+/// `app` M2M workload already carries `sentin8:stat:measure` - the same
 /// identity the daily telemetry uses.
 /// Build the cert-presenting Stat ingest transport for the app workload
 /// (auth DESIGN §4.3f): the `app` CERTIFICATE is the identity
-/// — Stat's TLS layer authenticates the handshake; the registry map
+/// - Stat's TLS layer authenticates the handshake; the registry map
 /// authorizes the `sentin8:stat:measure` scope. No token exists.
 pub async fn build_stat_token(
     config: &AppConfig,
@@ -72,7 +72,7 @@ pub async fn stat_admin_transport(
 }
 
 /// Build the Stat client for App telemetry : the `app`
-/// CERTIFICATE is the identity — cert-presenting transport, no token.
+/// CERTIFICATE is the identity - cert-presenting transport, no token.
 pub async fn build_stat_client(
     config: &AppConfig,
     _pool: &sqlx::PgPool,
@@ -151,7 +151,7 @@ pub async fn emit_daily_telemetry(
 #[cfg(test)]
 mod tests {
 
-    /// Install the Graviola PQ crypto provider once — reqwest panics with
+    /// Install the Graviola PQ crypto provider once - reqwest panics with
     /// "No provider set" when a client is built without one.
     fn install_provider() {
         use std::sync::Once;

@@ -7,7 +7,7 @@
 -- A listing row is now a (slug, channel) release: `version` orders
 -- releases within a channel, `channel` selects the release train
 -- (stable|beta|dev). Install resolves the newest published version for
--- the requested channel — a slug alone no longer identifies a row.
+-- the requested channel - a slug alone no longer identifies a row.
 -- Greenfield: the v1 slug-only UNIQUE constraint is replaced by
 -- UNIQUE (app_slug, channel).
 
@@ -31,7 +31,7 @@ CREATE INDEX IF NOT EXISTS idx_app_store_listings_channel
 
 -- Install resolution helper: newest published version for a slug on a
 -- channel (semver-ordered by string compare of zero-padded segments is
--- NOT used — versions are advisory ordering keys; newest = highest
+-- NOT used - versions are advisory ordering keys; newest = highest
 -- version text among published rows, tie-broken by created_at DESC).
 CREATE OR REPLACE FUNCTION app.app_newest_listing(
     p_app_slug TEXT,

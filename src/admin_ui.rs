@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Sentin8:App Admin UI handlers — RFW definitions.
+//! Sentin8:App Admin UI handlers - RFW definitions.
 //! Served from `GET /v1/admin/ui/{page}`, rendered by Sentin8:Dash at runtime.
 
 use crate::handlers::AppState;
@@ -21,13 +21,13 @@ use sqlx::Row;
 /// Query parameters accepting an explicit target environment.
 #[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 pub struct TargetEnvQuery {
-    /// Target env id — REQUIRED for cross-env admin calls, never defaulted.
+    /// Target env id - REQUIRED for cross-env admin calls, never defaulted.
     #[serde(default)]
     pub target_env_id: Option<String>,
 }
 
 /// Query parameters for the customer-mode instance discovery surface
-/// (auth DESIGN invariant 12): the env to enumerate is explicit — never
+/// (auth DESIGN invariant 12): the env to enumerate is explicit - never
 /// derived from the caller's token env, since the calling M2M workload
 /// authenticates in the SYSTEM env.
 #[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
@@ -36,7 +36,7 @@ pub struct CustomerModeQuery {
     pub env_id: uuid::Uuid,
 }
 
-/// `GET /v1/admin/ui/{page}` — RFW page definition for the requested page.
+/// `GET /v1/admin/ui/{page}` - RFW page definition for the requested page.
 #[utoipa::path(
     get,
     path = "/v1/admin/ui/{page}",
@@ -70,7 +70,7 @@ pub async fn get_admin_ui(
         ],
     )
     .await?;
-    // Page definitions are static — target_env_id is only needed for the
+    // Page definitions are static - target_env_id is only needed for the
     // install page (to resolve auth domain dropdown options).
     let env_id = q
         .target_env_id
@@ -94,7 +94,7 @@ pub async fn get_admin_ui(
         // Resolve org_id + env/org slugs + sibling envs in ONE explicit
         // transaction with the target env's context ( rule 2): the
         // context is transaction-local (`set_config(..., true)`) and each
-        // pooled statement runs in its OWN implicit transaction — a
+        // pooled statement runs in its OWN implicit transaction - a
         // bare-acquire context-set evaporates before the next statement
         // and FORCE RLS hides every row.
         let (_org_id, current_env_slug, current_org_domain, options_rows) = {
@@ -244,9 +244,9 @@ pub async fn get_admin_ui(
                         placeholder: None,
                         default_value: Some(serde_json::json!("public")),
                         options: Some(vec![
-                            FormFieldOption { value: "public".into(), label: "Public — visible to all orgs".into() },
-                            FormFieldOption { value: "env".into(), label: "Env — visible only within this env".into() },
-                            FormFieldOption { value: "usr".into(), label: "Private — visible only to me".into() },
+                            FormFieldOption { value: "public".into(), label: "Public - visible to all orgs".into() },
+                            FormFieldOption { value: "env".into(), label: "Env - visible only within this env".into() },
+                            FormFieldOption { value: "usr".into(), label: "Private - visible only to me".into() },
                         ]),
                         validation: None,
                         width: None,
@@ -383,7 +383,7 @@ pub async fn get_admin_ui(
             }))
             .widget(card("Warning", "Uninstalling will permanently remove this app instance, its domain, and OAuth client. This action cannot be undone."))
             .build(),
- // ── Policy Studio (design , story 28.14) — shared page
+ // ── Policy Studio (design , story 28.14) - shared page
  // constructors; the guard guarantees `Some` ( dispatch).
         p if sentin8::rfw::policy_page("sentin8:app", p).is_some() => sentin8::rfw
             ::policy_page("sentin8:app", p)
@@ -396,7 +396,7 @@ pub async fn get_admin_ui(
     ))
 }
 
-/// `GET /v1/admin/{resource}` — returns a JSON array of admin data rows.
+/// `GET /v1/admin/{resource}` - returns a JSON array of admin data rows.
 #[utoipa::path(
     get,
     path = "/v1/admin/{resource}",
@@ -430,7 +430,7 @@ pub async fn get_admin_data(
         ],
     )
     .await?;
-    // Fix A : target_env_id is REQUIRED — no fallback to the token env.
+    // Fix A : target_env_id is REQUIRED - no fallback to the token env.
     let env_id = q
         .target_env_id
         .as_deref()
@@ -444,11 +444,11 @@ pub async fn get_admin_data(
     // ( rule 2): set RLS context
     // and run the data queries on the SAME pooled connection. The previous
     // shape set context on one connection (org lookup) then queried
-    // `state.pool` — a different connection with no context — so FORCE RLS
+    // `state.pool` - a different connection with no context - so FORCE RLS
     // hid every row and the store page rendered "No data" right after a
     // successful create.
     // Explicit transaction ( rule 2): the context is transaction-local
-    // and each pooled statement runs in its OWN implicit transaction — the
+    // and each pooled statement runs in its OWN implicit transaction - the
     // context-set and the queries must share ONE transaction.
     let mut tx = state
         .pool
@@ -466,7 +466,7 @@ pub async fn get_admin_data(
             .unwrap_or(sentin8::config::SYSTEM_ORG_ID);
     let rows: Vec<serde_json::Value> = match resource.as_str() {
  // Visibility is enforced by the visibility-scoped RLS policy 
- // — no manual visibility filter here.
+ // - no manual visibility filter here.
         "store" => sqlx::query("SELECT id::text, app_name, app_slug, description, status, backend_url FROM store_listings ORDER BY created_at DESC LIMIT 100")
             .fetch_all(&mut *tx).await
             .map(|rows| rows.iter().map(|row| serde_json::json!({
@@ -491,7 +491,7 @@ pub async fn get_admin_data(
     Ok(Json(serde_json::Value::Array(rows)))
 }
 
-/// `POST /v1/admin/instances/uninstall` — uninstall an app instance.
+/// `POST /v1/admin/instances/uninstall` - uninstall an app instance.
 /// Body: `{ "instance_id": "uuid" }`. Deletes the instance if it belongs
 /// to the caller's org/env (RLS-enforced).
 #[utoipa::path(
@@ -537,7 +537,7 @@ pub async fn uninstall_instance(
         })?;
     let org_id: uuid::Uuid = {
         // Same-connection tenant context : the sys_environments_select
-        // RLS policy gates on sentin8_context_initialized — a bare-pool
+        // RLS policy gates on sentin8_context_initialized - a bare-pool
         // SELECT returns 0 rows under FORCE RLS and the fallback would
         // silently substitute SYSTEM_ORG_ID (breaking the RLS-scoped delete).
         let mut tx = state

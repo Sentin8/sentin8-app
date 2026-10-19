@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:App
 // SPDX-License-Identifier: Apache-2.0
 
-//! Story — App listens to Bus `stat-pipeline` stream events.
+//! Story - App listens to Bus `stat-pipeline` stream events.
 //!
 //! The Stat pipeline emits `sentin8:stat.aggregate.updated` events on the Bus
 //! `stat-pipeline` stream family when an analytics aggregate is updated.
@@ -71,7 +71,7 @@ pub fn parse_aggregate_updated(msg: &Message) -> Result<AggregateUpdatedEvent, S
 /// listing's property id), so an aggregate-update event for that property
 /// maps 1:1 to the listing's usage metric. The aggregate value rides the
 /// standard Stat ingest pipeline (`POST /v1/m/metric`, sentin8:stat:measure
-/// via the service's own M2M token) — App never writes Stat tables directly.
+/// via the service's own M2M token) - App never writes Stat tables directly.
 pub fn update_listing_metrics(
     event: &AggregateUpdatedEvent,
     client: &sentin8_stat_sdk::client::Client,
@@ -84,7 +84,7 @@ pub fn update_listing_metrics(
     );
 }
 
-/// Per-event Stat ingest bundle — the client is constructed per event with
+/// Per-event Stat ingest bundle - the client is constructed per event with
 /// the event's `property_id` (the cert-presenting transport is shared, so
 /// per-event construction is cheap).
 #[derive(Clone)]
@@ -92,7 +92,7 @@ pub struct StatIngest {
     /// The stat service base URL.
     pub base_url: String,
     /// The cert-presenting transport (the `app` workload
-    /// certificate IS the identity — presented on the TLS handshake).
+    /// certificate IS the identity - presented on the TLS handshake).
     pub http: std::sync::Arc<sentin8::middleware::http_client::Sentin8HttpClient>,
 }
 
@@ -108,7 +108,7 @@ impl StatIngest {
 }
 
 /// A `StatEventListener` subscribes to Bus `stat-pipeline` events via
-/// Server-Sent Events. Bus pushes messages as they arrive — no HTTP
+/// Server-Sent Events. Bus pushes messages as they arrive - no HTTP
 /// polling. The listener connects via `run`, processes
 /// `sentin8:stat.aggregate.updated` events, and reconnects on disconnect with a 2s
 /// backoff.
@@ -125,7 +125,7 @@ impl StatEventListener {
         Self { bus, stat }
     }
 
-    /// Run the listener as a long-lived task — connect to Bus via SSE,
+    /// Run the listener as a long-lived task - connect to Bus via SSE,
     /// receive pushed `sentin8:stat.aggregate.updated` events, update listing metrics,
     /// and ACK via the HTTP ack endpoint. No HTTP polling. Reconnects on
     /// disconnect with a 2s backoff. Runs until the process is shut down.
@@ -173,7 +173,7 @@ impl StatEventListener {
                         if let Some(d) = line.strip_prefix("data: ") {
                             data_line = d.to_string();
                         }
-                        // `id:` lines and `:` comments (heartbeats) are skipped —
+                        // `id:` lines and `:` comments (heartbeats) are skipped -
                         // ACKs use message_id from the JSON data.
                     }
 
@@ -214,7 +214,7 @@ impl StatEventListener {
                         } else {
                             tracing::debug!(
                                 property_id = %event.property_id,
-                                "app: stat ingest not configured — aggregate event dropped"
+                                "app: stat ingest not configured - aggregate event dropped"
                             );
                         }
                     }
