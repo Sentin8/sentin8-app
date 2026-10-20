@@ -74,4 +74,5 @@ use crate::steps;
         (name = "policy", description = "Shield policy administration (shared surface)"),
         (name = "app", description = "Sentin8:App - app store, instance management, setup"),
     ),
-)]pub struct AppOpenApi;
+)]
+pub struct AppOpenApi;

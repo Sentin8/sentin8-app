@@ -19,8 +19,8 @@ use uuid::Uuid;
 use crate::auth;
 use crate::config::AppConfig;
 use crate::steps::{self, StepExecuteRequest, StepExecuteResponse};
-use sentin8::rfw::response::AdminUiResponse;
 use sentin8::middleware::health::LiveHealth;
+use sentin8::rfw::response::AdminUiResponse;
 
 // ── Typed read models (OAPEC-9) ────────────────────────────────────────
 
@@ -104,8 +104,6 @@ pub struct AppRuntimeContext {
     /// Merged sign-in tagline.
     pub sign_in_text: Option<String>,
 }
-
-
 
 /// Shared application state for the App service.
 #[derive(Clone)]
@@ -1899,35 +1897,43 @@ pub async fn runtime_context(
         .unwrap_or_default();
     let allow_signup: bool = row.try_get::<bool, _>("allow_signup").unwrap_or(true);
     Ok(Json(AppRuntimeContext {
-           org_id: org_id.to_string(),
-           env_id: env_id.to_string(),
-           application_id: row.get::<Uuid, _>("id"),
-           app_slug: row.get::<String, _>("app_slug"),
-           hostname: row.try_get::<String, _>("hostname").unwrap_or_default(),
-           sentin8_auth_domain: env_auth_domain,
-           auth_domain: auth_domain,
-           allow_signup: allow_signup,
-           sentin8_bff_domain: sentin8_bff_domain,
-           custom_domain: custom_domain_val,
-           domain_type: row.try_get::<String, _>("domain_type").unwrap_or_default(),
-           status: row.get::<String, _>("status"),
-           instance_name: row.try_get::<String, _>("instance_name").unwrap_or_default(),
-           instance_description: row.try_get::<String, _>("instance_description").unwrap_or_default(),
-           organization_name: row.try_get::<String, _>("org_name").unwrap_or_default(),
-           oauth_client_id: row.try_get::<String, _>("oauth_client_id").unwrap_or_default(),
-           feature_flags: row.try_get::<serde_json::Value, _>("feature_flags").unwrap_or(serde_json::json!({})),
-           backend_url: row.try_get::<String, _>("backend_url").unwrap_or_default(),
-           app_name: row.try_get::<String, _>("app_name").unwrap_or_default(),
-           app_description: row.try_get::<String, _>("description").unwrap_or_default(),
-    // Branding (merged org→env)
-           logo_url: branding.logo_url,
-           logo_icon_url: branding.logo_icon_url,
-           primary_color: branding.primary_color,
-           accent_color: branding.accent_color,
-           font_family: branding.font_family,
-           theme_mode: branding.theme_mode,
-           custom_css: branding.custom_css,
-           sign_in_text: branding.sign_in_text,
+        org_id: org_id.to_string(),
+        env_id: env_id.to_string(),
+        application_id: row.get::<Uuid, _>("id"),
+        app_slug: row.get::<String, _>("app_slug"),
+        hostname: row.try_get::<String, _>("hostname").unwrap_or_default(),
+        sentin8_auth_domain: env_auth_domain,
+        auth_domain: auth_domain,
+        allow_signup: allow_signup,
+        sentin8_bff_domain: sentin8_bff_domain,
+        custom_domain: custom_domain_val,
+        domain_type: row.try_get::<String, _>("domain_type").unwrap_or_default(),
+        status: row.get::<String, _>("status"),
+        instance_name: row
+            .try_get::<String, _>("instance_name")
+            .unwrap_or_default(),
+        instance_description: row
+            .try_get::<String, _>("instance_description")
+            .unwrap_or_default(),
+        organization_name: row.try_get::<String, _>("org_name").unwrap_or_default(),
+        oauth_client_id: row
+            .try_get::<String, _>("oauth_client_id")
+            .unwrap_or_default(),
+        feature_flags: row
+            .try_get::<serde_json::Value, _>("feature_flags")
+            .unwrap_or(serde_json::json!({})),
+        backend_url: row.try_get::<String, _>("backend_url").unwrap_or_default(),
+        app_name: row.try_get::<String, _>("app_name").unwrap_or_default(),
+        app_description: row.try_get::<String, _>("description").unwrap_or_default(),
+        // Branding (merged org→env)
+        logo_url: branding.logo_url,
+        logo_icon_url: branding.logo_icon_url,
+        primary_color: branding.primary_color,
+        accent_color: branding.accent_color,
+        font_family: branding.font_family,
+        theme_mode: branding.theme_mode,
+        custom_css: branding.custom_css,
+        sign_in_text: branding.sign_in_text,
     }))
 }
 
@@ -2531,7 +2537,8 @@ pub async fn health() -> Json<LiveHealth> {
         service: Some("app".to_string()),
         version: Some(sentin8::build_info::id()),
         build: Some(sentin8::build_info::build_hash().to_string()),
-        active_connections: sentin8::middleware::traffic_counter::process_active_connections().map(|n| n as i64),
+        active_connections: sentin8::middleware::traffic_counter::process_active_connections()
+            .map(|n| n as i64),
     })
 }
 
