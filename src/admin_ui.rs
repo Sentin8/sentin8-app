@@ -228,7 +228,7 @@ pub async fn get_admin_ui(
                         label: "Backend URL".into(),
                         field_type: FormFieldType::Text,
                         required: false,
-                        placeholder: Some("e.g. https://my-app-backend.ops.sys.sentin8.local".into()),
+                        placeholder: Some("e.g. https://my-app-backend.ops.sys.local.sentin8.dev".into()),
                         default_value: None,
                         options: None,
                         validation: None,

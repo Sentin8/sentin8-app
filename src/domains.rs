@@ -169,8 +169,8 @@ mod tests {
     #[test]
     fn default_domain_uses_pattern() {
         // Default-domain org: org_domain = {slug}.{base}.
-        let d = generate_default_domain("ebank", "prod", "acme.sentin8.local");
-        assert_eq!(d, "ebank.prod.acme.sentin8.local");
+        let d = generate_default_domain("ebank", "prod", "acme.local.sentin8.dev");
+        assert_eq!(d, "ebank.prod.acme.local.sentin8.dev");
     }
 
     #[test]
@@ -236,7 +236,7 @@ mod tests {
     fn domain_binding_struct_roundtrip() {
         let id = Uuid::new_v4();
         let b = DomainBinding {
-            domain: "prod.acme.ebank.app.sentin8.local".into(),
+            domain: "prod.acme.ebank.app.local.sentin8.dev".into(),
             instance_id: id,
             verification_token: "sentin8-verify-deadbeef".into(),
             verified: false,

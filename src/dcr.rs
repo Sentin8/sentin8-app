@@ -39,7 +39,7 @@ pub enum DcrError {
 
 /// Register an OAuth client with Auth via DCR (RFC 7591).
 ///
-/// - `sentin8_auth_base_url`: the Auth issuer base URL (e.g. `https://sentin8-auth.ops.sys.sentin8.local`).
+/// - `sentin8_auth_base_url`: the Auth issuer base URL (e.g. `https://sentin8-auth.ops.sys.local.sentin8.dev`).
 /// - `instance_id`: the App app instance ID (used to derive a stable client_name).
 /// - `redirect_uris`: the redirect URIs the client may use.
 /// - `scopes`: the scopes the app requires (from the listing's

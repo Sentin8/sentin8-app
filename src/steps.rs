@@ -260,7 +260,7 @@ mod tests {
     #[test]
     fn handler_profile_payload_includes_all_steps() {
         install_provider();
-        let body = handler_profile_payload("https://sentin8-app.ops.sys.sentin8.local", "tok-1");
+        let body = handler_profile_payload("https://sentin8-app.ops.sys.local.sentin8.dev", "tok-1");
         assert_eq!(body["domain"], SENTIN8_APP_DOMAIN);
         let steps = body["steps"].as_array().unwrap();
         assert_eq!(steps.len(), 3);
@@ -273,7 +273,7 @@ mod tests {
         );
         assert_eq!(
             body["callback_config"]["base_url"],
-            "https://sentin8-app.ops.sys.sentin8.local"
+            "https://sentin8-app.ops.sys.local.sentin8.dev"
         );
     }
 
