@@ -65,14 +65,22 @@ pub async fn register_oauth_client(
         scopes,
         &["authorization_code", "refresh_token"],
         true,
+        None,
     )
     .await
 }
 
 /// Story - Register an OAuth client with custom grant types.
 ///
-/// Used for the env-scoped CIBA client (adds `urn:openid:params:grant-type:ciba`)
-/// and the staff client (standard grants). Same public PKCE client otherwise.
+/// Used for the env-scoped CIBA client (adds the CIBA grant) and the staff
+/// client (standard grants). Same public PKCE client otherwise.
+///
+/// `client_jwks` attaches inline `jwks` metadata to the registration
+/// (RFC 7591 `jwks`). Certified Sentin8:Auth's CIBA contract (FAPI-CIBA §7.1)
+/// verifies the SIGNED request object against the client's registered keys -
+/// so the CIBA caller (Sentin8:BFF) registers its ES256 public JWK through
+/// this attach point. Both URNs in the fapi grant allow-list name the same
+/// grant; the CIBA grant string passes through unchanged.
 pub async fn register_oauth_client_with_grants(
     sentin8_auth_base_url: &str,
     instance_id: uuid::Uuid,
@@ -80,6 +88,7 @@ pub async fn register_oauth_client_with_grants(
     scopes: &[String],
     grant_types: &[&str],
     consent_required: bool,
+    client_jwks: Option<&serde_json::Value>,
 ) -> Result<OAuthClient, DcrError> {
     // Build the scope string: always include the OIDC baseline, then the
     // app-specific scopes (deduped, order-preserving).
@@ -100,7 +109,7 @@ pub async fn register_oauth_client_with_grants(
         .danger_accept_invalid_certs(true)
         .build()
         .map_err(|e| DcrError::Http(format!("http client: {e}")))?;
-    let body = serde_json::json!({
+    let mut body = serde_json::json!({
         "client_name": format!("app-instance-{instance_id}"),
         "redirect_uris": redirect_uris,
         "grant_types": grant_types,
@@ -110,6 +119,11 @@ pub async fn register_oauth_client_with_grants(
         "application_type": "web",
         "consent_required": consent_required,
     });
+    // RFC 7591 inline jwks (the CIBA caller's signing key) - attach when the
+    // caller provides it. Omitted keys keep the historic no-key registration.
+    if let Some(jwks) = client_jwks {
+        body["jwks"] = jwks.clone();
+    }
     let resp = http
         .post(format!(
             "{}/oauth/register",

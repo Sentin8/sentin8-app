@@ -1333,6 +1333,25 @@ pub async fn setup_instance(
         // flag is re-provisioned on the next install retry.
         if !auth_domain.is_empty() {
             let customer_auth_url = resolve_env_sentin8_auth_url(&state, org_id, env_id).await;
+            // The CIBA caller's signing key: when the deployment configures
+            // `SENTIN8_BFF_CIBA_KEY_PEM` (the SAME path the BFF reads), the
+            // derived ES256 public JWK attaches to the registration (the
+            // inline `jwks` metadata) - certified Sentin8:Auth verifies the
+            // signed request object against it. Without the shared key the
+            // client registers keyless (the BFF's ephemeral fallback; dev
+            // posture).
+            let client_jwks = std::env::var("SENTIN8_BFF_CIBA_KEY_PEM")
+                .ok()
+                .filter(|p| !p.trim().is_empty())
+                .and_then(|p| std::fs::read_to_string(p.trim()).ok())
+                .filter(|pem| pem.contains("PRIVATE KEY"))
+                .and_then(|pem| match sentin8::auth::fapi::ec_public_jwk(&pem) {
+                    Ok(jwk) => Some(serde_json::json!({ "keys": [jwk] })),
+                    Err(e) => {
+                        tracing::warn!(error = %e, "app: CIBA client JWK derive failed - registering keyless");
+                        None
+                    }
+                });
             match crate::dcr::register_oauth_client_with_grants(
                 &customer_auth_url,
                 instance_id,
@@ -1343,6 +1362,7 @@ pub async fn setup_instance(
                     "urn:ietf:params:oauth:grant-type:ciba",
                 ],
                 consent_required,
+                client_jwks.as_ref(),
             )
             .await
             {
@@ -2960,6 +2980,7 @@ async fn register_signin_client_with_retry(
             &scopes,
             &["authorization_code", "refresh_token"],
             consent_required,
+            None,
         )
         .await
         {
