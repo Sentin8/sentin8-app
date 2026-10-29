@@ -41,7 +41,7 @@ fn create_listing_request_defaults_visibility_to_public() {
     });
     let parsed: serde_json::Value = serde_json::from_value(req).unwrap();
     // visibility omitted → the handler defaults to "public" (VISIBILITIES
-    // accepts usr/env/public; "org" was dropped - ).
+    // accepts usr/env/public; "org" was dropped).
     assert!(parsed.get("visibility").is_none());
 }
 

@@ -22,7 +22,7 @@ use crate::steps::{self, StepExecuteRequest, StepExecuteResponse};
 use sentin8::middleware::health::LiveHealth;
 use sentin8::rfw::response::AdminUiResponse;
 
-// ── Typed read models (OAPEC-9) ────────────────────────────────────────
+// ── Typed read models ────────────────────────────────────────
 
 /// One customer-mode app instance.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
@@ -114,7 +114,7 @@ pub struct AppState {
     pub pool: sqlx::PgPool,
     /// M2M-backed Bus client built at startup via DCR (RFC 7591).
     pub _bus_client: sentin8::bus::client::BusClient,
-    /// Shield engine ( - ): additional gate after scope.
+    /// Shield engine : additional gate after scope.
     pub policy: Arc<crate::policy::Engine>,
     /// Shared Sentin8:Policy admin surface .
     pub admin: sentin8::shield::admin::SharedAdminState,
