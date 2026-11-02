@@ -104,9 +104,21 @@ pub async fn register_oauth_client_with_grants(
     // env auth (brand-new env mid-provisioning) must fail fast so the
     // caller's retry loop can proceed (design: retry-with-backoff at
     // setup_instance, not a request that never returns).
+    //
+    // NO `danger_accept_invalid_certs`: that flag routes reqwest onto its
+    // NoVerifier, whose supported_verify_schemes is a hardcoded CLASSICAL
+    // list (no ML_DSA_65). The TLS signature_algorithms offer then has no
+    // PQ scheme, and a tenant auth whose leaf is ML-DSA-65-signed cannot
+    // negotiate - the handshake dies with a fatal HandshakeFailure alert
+    // (observed live: every e2e globalSetup DCR attempt failed with
+    // 'error sending request' while auth never saw a single
+    // /oauth/register arrive; wire-isolated with a four-variant reqwest
+    // probe - plain/identity clients connect, danger-flagged ones abort).
+    // The platform CA chain is fully trusted through the installed PQ
+    // provider (verify ok), so the danger bypass is both broken AND
+    // unnecessary here.
     let http = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
-        .danger_accept_invalid_certs(true)
         .build()
         .map_err(|e| DcrError::Http(format!("http client: {e}")))?;
     let mut body = serde_json::json!({
