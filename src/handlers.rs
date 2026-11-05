@@ -103,6 +103,10 @@ pub struct AppRuntimeContext {
     pub custom_css: Option<String>,
     /// Merged sign-in tagline.
     pub sign_in_text: Option<String>,
+    /// Merged tenant privacy-policy link (app footer).
+    pub privacy_url: Option<String>,
+    /// Merged tenant terms-of-service link (app footer).
+    pub terms_url: Option<String>,
 }
 
 /// Shared application state for the App service.
@@ -1954,6 +1958,8 @@ pub async fn runtime_context(
         theme_mode: branding.theme_mode,
         custom_css: branding.custom_css,
         sign_in_text: branding.sign_in_text,
+        privacy_url: branding.privacy_url,
+        terms_url: branding.terms_url,
     }))
 }
 
@@ -3013,6 +3019,8 @@ struct MergedBranding {
     theme_mode: Option<String>,
     custom_css: Option<String>,
     sign_in_text: Option<String>,
+    privacy_url: Option<String>,
+    terms_url: Option<String>,
 }
 
 /// Fetch merged org→env branding from `sys.branding` (Story).
@@ -3031,13 +3039,13 @@ async fn fetch_merged_branding(
         .await;
     // Org-level branding (scope='org', env_id IS NULL).
     let org_row = sqlx::query(
-        r#"SELECT logo_url, logo_icon_url, primary_color, accent_color, font_family, theme_mode, custom_css, sign_in_text
+        r#"SELECT logo_url, logo_icon_url, primary_color, accent_color, font_family, theme_mode, custom_css, sign_in_text, privacy_url, terms_url
              FROM sys.branding
             WHERE org_id = $1 AND scope = 'org' AND env_id IS NULL"#,
     ).bind(org_id).fetch_optional(&mut *conn).await?;
     // Env-level branding (scope='env', env_id = $2).
     let env_row = sqlx::query(
-        r#"SELECT logo_url, logo_icon_url, primary_color, accent_color, font_family, theme_mode, custom_css, sign_in_text
+        r#"SELECT logo_url, logo_icon_url, primary_color, accent_color, font_family, theme_mode, custom_css, sign_in_text, privacy_url, terms_url
              FROM sys.branding
             WHERE org_id = $1 AND env_id = $2 AND scope = 'env'"#,
     ).bind(env_id).fetch_optional(&mut *conn).await?;
@@ -3064,6 +3072,8 @@ async fn fetch_merged_branding(
         theme_mode: pick(&org_row, &env_row, "theme_mode"),
         custom_css: pick(&org_row, &env_row, "custom_css"),
         sign_in_text: pick(&org_row, &env_row, "sign_in_text"),
+        privacy_url: pick(&org_row, &env_row, "privacy_url"),
+        terms_url: pick(&org_row, &env_row, "terms_url"),
     })
 }
 

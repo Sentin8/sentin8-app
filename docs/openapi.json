@@ -1771,6 +1771,13 @@
             ],
             "description": "Merged primary color."
           },
+          "privacy_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Merged tenant privacy-policy link (app footer)."
+          },
           "sentin8_auth_domain": {
             "type": "string",
             "description": "The platform auth domain."
@@ -1789,6 +1796,13 @@
           "status": {
             "type": "string",
             "description": "Instance status."
+          },
+          "terms_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Merged tenant terms-of-service link (app footer)."
           },
           "theme_mode": {
             "type": [
