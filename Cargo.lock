@@ -3989,7 +3989,7 @@ dependencies = [
 
 [[package]]
 name = "sentin8-app"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -4022,7 +4022,7 @@ dependencies = [
 
 [[package]]
 name = "sentin8-app-contracts"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "serde",
@@ -4032,7 +4032,7 @@ dependencies = [
 
 [[package]]
 name = "sentin8-app-sdk"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "sentin8-app-contracts",
 ]
