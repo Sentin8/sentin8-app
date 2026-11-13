@@ -4518,8 +4518,8 @@ dependencies = [
 
 [[package]]
 name = "sentin8-stat-client"
-version = "0.1.0"
-source = "git+https://github.com/Sentin8/sentin8-stat?tag=stat-sdk-v0.6.11#f06d7364d23d2c30956a3e3779d95d9125024b6c"
+version = "1.0.0"
+source = "git+https://github.com/Sentin8/sentin8-stat?tag=stat-sdk-v1.0.0#754792ea30f845da97177a94265263c32685da99"
 dependencies = [
  "async-trait",
  "chrono",
@@ -4536,8 +4536,8 @@ dependencies = [
 
 [[package]]
 name = "sentin8-stat-contracts"
-version = "0.1.0"
-source = "git+https://github.com/Sentin8/sentin8-stat?tag=stat-sdk-v0.6.11#f06d7364d23d2c30956a3e3779d95d9125024b6c"
+version = "1.0.0"
+source = "git+https://github.com/Sentin8/sentin8-stat?tag=stat-sdk-v1.0.0#754792ea30f845da97177a94265263c32685da99"
 dependencies = [
  "chrono",
  "serde",
@@ -4547,8 +4547,8 @@ dependencies = [
 
 [[package]]
 name = "sentin8-stat-sdk"
-version = "0.1.0"
-source = "git+https://github.com/Sentin8/sentin8-stat?tag=stat-sdk-v0.6.11#f06d7364d23d2c30956a3e3779d95d9125024b6c"
+version = "1.0.0"
+source = "git+https://github.com/Sentin8/sentin8-stat?tag=stat-sdk-v1.0.0#754792ea30f845da97177a94265263c32685da99"
 dependencies = [
  "sentin8-stat-client",
  "sentin8-stat-contracts",
