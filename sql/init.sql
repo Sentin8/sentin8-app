@@ -238,3 +238,11 @@ GRANT USAGE ON SCHEMA app TO sentin8_app_service;
 GRANT SELECT, INSERT, UPDATE, DELETE ON app.outbox TO sentin8_app_service;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO sentin8_app_service;
 GRANT SELECT, INSERT, UPDATE, DELETE ON app.audit_journal TO sentin8_app_service;
+-- Cross-schema RBAC reads (APPINST-RBAC-1, surfaced by the platform
+-- app-install e2e path): `require_target_env_access` checks the caller's
+-- membership in the TARGET env via the auth RBAC tables
+-- (`auth.user_roles` / `auth.group_members`). The grant rides THIS
+-- service's init (the reading is the app's own need - the auth schema's
+-- init only grants its own role).
+GRANT USAGE ON SCHEMA auth TO sentin8_app_service;
+GRANT SELECT ON auth.user_roles, auth.roles, auth.groups, auth.group_members TO sentin8_app_service;

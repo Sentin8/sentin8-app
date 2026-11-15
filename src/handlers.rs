@@ -223,15 +223,20 @@ async fn require_target_env_access(
         .execute(&mut *tx)
         .await;
     let member: Option<(bool,)> = sqlx::query_as(
+        // Schema-qualified: the RBAC tables live in the `auth` schema and
+        // this service's PG role search_path (APPINST-RBAC-1:
+        // `app, sentin8, public` for sentin8_app_service) does NOT
+        // include it - the unqualified reference failed the app
+        // install with `relation "user_roles" does not exist`.
         r#"SELECT true AS member
              FROM sys.environments e
             WHERE e.id = $1
               AND (
-                    EXISTS (SELECT 1 FROM user_roles ur
-                            JOIN roles r ON r.id = ur.role_id
+                    EXISTS (SELECT 1 FROM auth.user_roles ur
+                            JOIN auth.roles r ON r.id = ur.role_id
                             WHERE ur.user_id = $2 AND r.env_id = $1)
-                 OR EXISTS (SELECT 1 FROM group_members gm
-                            JOIN groups g ON g.id = gm.group_id
+                 OR EXISTS (SELECT 1 FROM auth.group_members gm
+                            JOIN auth.groups g ON g.id = gm.group_id
                             WHERE gm.user_id = $2 AND g.env_id = $1)
                   )"#,
     )
